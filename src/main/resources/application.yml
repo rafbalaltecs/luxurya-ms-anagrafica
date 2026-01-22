@@ -8,10 +8,10 @@ spring:
 
   # --- CONFIGURAZIONE MYSQL ---
   datasource:
-    url: jdbc:postgresql://localhost:5432/anagrafica_db
-    username: fatturazione_user
-    password: fatturazione_password
-    driver-class-name: com.postgresql.Driver
+    url: jdbc:postgresql://16.16.192.42:5432/mydb
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:

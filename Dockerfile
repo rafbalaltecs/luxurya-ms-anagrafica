@@ -15,7 +15,7 @@ COPY app.jar app.jar
 EXPOSE 8080
 
 # Variabili d'ambiente opzionali
-ENV JAVA_OPTS="-Xms256m -Xmx512m"
+ENV JAVA_OPTS="-Xms512m -Xmx1024m"
 ENV SPRING_PROFILES_ACTIVE=production
 
 # Comando per avviare l'applicazione
