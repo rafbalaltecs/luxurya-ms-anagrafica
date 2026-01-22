@@ -4,10 +4,11 @@ server:
   forward-headers-strategy: framework
 
 springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui/index.html
+    config-url: /api/ms-anagrafica/v3/api-docs/swagger-config
 
 spring:
   application:
