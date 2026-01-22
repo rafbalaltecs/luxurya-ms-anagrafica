@@ -1,13 +1,8 @@
 server:
   port: 8080
   address: 0.0.0.0
-  forward-headers-strategy: framework
-
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui/index.html
+  servlet:
+    context-path: /api/ms-anagrafica
 
 spring:
   application:
