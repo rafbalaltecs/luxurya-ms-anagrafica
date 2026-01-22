@@ -9,7 +9,7 @@ spring:
   # --- CONFIGURAZIONE MYSQL ---
   datasource:
     url: jdbc:postgresql://16.16.192.42:5432/mydb
-    username: postgres
+    username: postgre
     password: postgres
     driver-class-name: org.postgresql.Driver
 
