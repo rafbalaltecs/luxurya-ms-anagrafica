@@ -25,18 +25,20 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        default_schema: public
+        globally_quoted_identifiers: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   # --- CONFIGURAZIONE MONGODB ---
   data:
     mongodb:
-      uri: mongodb://execus:execus123@13.51.33.27:27017/worldall?authSource=admin
+      uri: mongodb://admin:admin123@16.16.192.42:27017/luxurya?authSource=admin
       # in alternativa puoi separare host/port/db:
       # host: localhost
       # port: 27017
-      database: worldall
+      database: luxurya
     redis:
-      host: 127.0.0.1
+      host: 16.16.192.42
       port: 6379
       password: ""     # lascia vuoto se Redis non richiede autenticazione
       timeout: 6000    # millisecondi

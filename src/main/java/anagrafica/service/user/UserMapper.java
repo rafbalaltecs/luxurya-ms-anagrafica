@@ -2,14 +2,27 @@ package anagrafica.service.user;
 
 import anagrafica.dto.user.TypeUserRequest;
 import anagrafica.dto.user.TypeUserResponse;
+import anagrafica.dto.user.UserRequest;
 import anagrafica.entity.TypeUser;
+import anagrafica.entity.User;
 import anagrafica.exception.RestException;
+import anagrafica.utils.PasswordUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service("UserMapper")
 @Slf4j
 public class UserMapper {
+
+    public User requestToEntity(final UserRequest userRequest){
+        if(userRequest != null){
+            final User user = new User();
+            user.setEmail(userRequest.getEmail());
+            user.setPassword(PasswordUtils.encodePassword(userRequest.getPassword()));
+            return user;
+        }
+        return null;
+    }
 
     public TypeUser requestToEntityTypeUser(final TypeUserRequest request){
         if(request != null){

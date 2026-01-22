@@ -33,7 +33,7 @@ public class JwtFilter implements Filter {
 
         String path = req.getRequestURI();
 
-        if (path.startsWith("/api/auth") || path.startsWith("/actuator")) {
+        if (path.startsWith("/api/auth") || path.startsWith("/actuator") || path.startsWith("/api/login")) {
             chain.doFilter(request, response);
             isGuest();
             return;

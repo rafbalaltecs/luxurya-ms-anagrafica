@@ -5,4 +5,5 @@ import anagrafica.dto.auth.LoginResponse;
 
 public interface AuthService {
     LoginResponse login(final LoginRequest loginRequest);
+    String encodePassword(final String pwd);
 }
