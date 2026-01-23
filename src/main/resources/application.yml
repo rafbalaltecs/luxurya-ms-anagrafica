@@ -6,7 +6,7 @@ spring:
   application:
     name: luxurya-anagrafica-api
 
-  # --- CONFIGURAZIONE MYSQL ---
+  # --- CONFIGURAZIONE POSTGRES ---
   datasource:
     url: jdbc:postgresql://16.16.192.42:5432/mydb
     username: postgre
