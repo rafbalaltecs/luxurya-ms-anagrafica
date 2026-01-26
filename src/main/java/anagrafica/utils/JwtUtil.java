@@ -6,8 +6,11 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import java.security.Key;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
@@ -17,7 +20,10 @@ public class JwtUtil {
     private String usernameLogged;
     private String languageLogged;
     private Long idProfileLogged;
+    private Set<String> routes;
+
     private Boolean isGuest;
+    private Boolean isAdmin;
 
     public JwtUtil(@Value("${app.jwt.secret}") String secret,
                    @Value("${app.jwt.expiration-ms}") long expirationMs) {
@@ -53,8 +59,28 @@ public class JwtUtil {
         return isGuest;
     }
 
+    public Set<String> getRoutes(){
+        return routes;
+    }
+
     public void setGuest(Boolean guest) {
         isGuest = guest;
+    }
+
+    private void setIsAdmin(Boolean val){
+        isAdmin = val;
+    }
+
+    private void setCompactRoutes(final String compactRoutes){
+        if (compactRoutes != null && !compactRoutes.isBlank()) {
+            routes = Arrays.stream(compactRoutes.split("_"))
+                    .filter(s -> !s.isBlank())
+                    .collect(Collectors.toSet());
+        }
+    }
+
+    public boolean getIsAdmin(){
+        return isAdmin;
     }
 
     public String generateToken(String username) {
@@ -84,6 +110,9 @@ public class JwtUtil {
         try {
             Jws<Claims> claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             setUsernameLogged((String) claims.getBody().get("username"));
+            setIdProfileLogged((Long) claims.getBody().get("iduser"));
+            setIsAdmin((Boolean) claims.getBody().get("isAdmin"));
+            setCompactRoutes((String) claims.getBody().get("routes"));
         } catch (JwtException ex) {
             throw new RestException("Errore Validazione Token: " + ex.getMessage());
         }

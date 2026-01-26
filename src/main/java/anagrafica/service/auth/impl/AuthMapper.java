@@ -6,7 +6,9 @@ import anagrafica.entity.User;
 import anagrafica.service.user.PermissionService;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class AuthMapper {
@@ -23,9 +25,12 @@ public class AuthMapper {
             userResponse.setEmail(user.getEmail());
             final List<PermissionUser> permissionUsers = permissionService.findPermissionUserFromUser(user);
             if(!permissionUsers.isEmpty()){
+                final Set<String> typeUsers = new HashSet<>();
                 for(final PermissionUser permissionUser: permissionUsers){
+                    typeUsers.add(permissionUser.getTypeUser().getCode());
                     userResponse.setRoutes(permissionService.findRouteFromTypeUser(permissionUser.getTypeUser()));
                 }
+                userResponse.setTypeUsers(typeUsers);
             }
             return userResponse;
         }

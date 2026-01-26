@@ -7,5 +7,7 @@ import java.util.Set;
 @Data
 public class UserResponse {
     private String email;
+    private String system;
     private Set<String> routes;
+    private Set<String> typeUsers;
 }

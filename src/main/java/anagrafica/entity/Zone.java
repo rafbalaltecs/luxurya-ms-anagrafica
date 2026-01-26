@@ -7,23 +7,17 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "Company")
+@Table(name = "Zone")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Company extends AuditableEntity {
+public class Zone extends AuditableEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "Code")
-    private String code;
     @Column(name = "Name")
     private String name;
-    @Column(name = "Description")
-    private String description;
-    @Column(name = "Piva")
-    private String piva;
     @ManyToOne
     @JoinColumn(name = "CittaId")
     private Citta citta;

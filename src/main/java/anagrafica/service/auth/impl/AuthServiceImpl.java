@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -62,13 +64,34 @@ public class AuthServiceImpl implements AuthService {
         claims.put("username", loginRequest.getUsername());
 
         final LoginResponse authResponse = new LoginResponse();
-        authResponse.setToken(jwtUtil.generateToken(loginRequest.getUsername(), claims));
         authResponse.setUser(authMapper.entityToResponse(optionalUser.get()));
+
+        final Boolean isAdmin = authResponse.getUser()
+                .getTypeUsers()
+                .stream()
+                .anyMatch(type -> "ADMIN".equals(type));
+
+        claims.put("isAdmin", isAdmin);
+        claims.put("iduser", optionalUser.get().getId());
+        claims.put("routes", compactRoutes(authResponse.getUser().getRoutes()));
+        authResponse.setToken(jwtUtil.generateToken(loginRequest.getUsername(), claims));
 
         loginPublisher.publish(new LoginEventDTO(optionalUser.get().getEmail(), LocalDateTime.now().toString()));
 
         return authResponse ;
     }
+
+    private String compactRoutes(final Set<String> routes) {
+
+        if (routes == null || routes.isEmpty()) {
+            return "";
+        }
+
+        return routes.stream()
+                .sorted()
+                .collect(Collectors.joining("_"));
+    }
+
 
     @Override
     public String encodePassword(String pwd) {

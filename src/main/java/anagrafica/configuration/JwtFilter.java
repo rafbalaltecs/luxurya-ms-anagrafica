@@ -1,6 +1,7 @@
 package anagrafica.configuration;
 
 import anagrafica.exception.RestException;
+import anagrafica.service.auth.RouteAuthorizationService;
 import anagrafica.utils.JwtUtil;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,15 +11,18 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Set;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class JwtFilter implements Filter {
 
 	private final JwtUtil jwtUtil;
+    private final RouteAuthorizationService routeAuthorizationService;
 
-    public JwtFilter(JwtUtil jwtUtil) {
+    public JwtFilter(JwtUtil jwtUtil, RouteAuthorizationService routeAuthorizationService) {
         this.jwtUtil = jwtUtil;
+        this.routeAuthorizationService = routeAuthorizationService;
     }
     
     private void isGuest(){
@@ -68,6 +72,10 @@ public class JwtFilter implements Filter {
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             resp.setContentType("application/json");
             throw new RestException("Invalid or expired token");
+        }
+
+        if(!routeAuthorizationService.isAllowed(req.getRequestURI(), jwtUtil.getRoutes(), jwtUtil.getUsernameLogged())){
+            throw new RestException("User Not Allowed For This Path: " + req.getRequestURI());
         }
 
         req.setAttribute("authenticatedUser", jwtUtil.getUsernameLogged());
