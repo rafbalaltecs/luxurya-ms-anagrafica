@@ -1,16 +1,23 @@
 package anagrafica.service.zone.impl;
 
+import anagrafica.dto.company.CompanyResponse;
 import anagrafica.dto.event.AgentZoneEventDTO;
+import anagrafica.dto.event.CompanyZoneEventDTO;
 import anagrafica.dto.zone.ZoneRequest;
 import anagrafica.dto.zone.ZoneResponse;
 import anagrafica.entity.AgentZone;
 import anagrafica.entity.Citta;
 import anagrafica.entity.Zone;
+import anagrafica.entity.ZoneCompany;
+import anagrafica.entity.audit.CompanyZoneAudit;
 import anagrafica.entity.audit.OperationAuditEnum;
 import anagrafica.exception.RestException;
 import anagrafica.publisher.AgentZonePublisher;
+import anagrafica.publisher.CompanyZonePublisher;
 import anagrafica.repository.agent.AgentZoneRepository;
 import anagrafica.repository.geography.CittaRepository;
+import anagrafica.repository.zone.CompanyZoneAuditRepository;
+import anagrafica.repository.zone.ZoneCompanyRepository;
 import anagrafica.repository.zone.ZoneRepository;
 import anagrafica.service.zone.ZoneService;
 import anagrafica.utils.JwtUtil;
@@ -30,15 +37,21 @@ public class ZoneServiceImpl implements ZoneService {
     private final ZoneRepository zoneRepository;
     private final AgentZoneRepository agentZoneRepository;
     private final CittaRepository cittaRepository;
+    private final ZoneCompanyRepository zoneCompanyRepository;
 
     private final AgentZonePublisher agentZonePublisher;
+    private final CompanyZonePublisher companyZonePublisher;
+    private final CompanyZoneAuditRepository companyZoneAuditRepository;
     private final JwtUtil jwtUtil;
 
-    public ZoneServiceImpl(ZoneRepository zoneRepository, AgentZoneRepository agentZoneRepository, CittaRepository cittaRepository, AgentZonePublisher agentZonePublisher, JwtUtil jwtUtil) {
+    public ZoneServiceImpl(ZoneRepository zoneRepository, AgentZoneRepository agentZoneRepository, CittaRepository cittaRepository, ZoneCompanyRepository zoneCompanyRepository, AgentZonePublisher agentZonePublisher, CompanyZonePublisher companyZonePublisher, CompanyZoneAuditRepository companyZoneAuditRepository, JwtUtil jwtUtil) {
         this.zoneRepository = zoneRepository;
         this.agentZoneRepository = agentZoneRepository;
         this.cittaRepository = cittaRepository;
+        this.zoneCompanyRepository = zoneCompanyRepository;
         this.agentZonePublisher = agentZonePublisher;
+        this.companyZonePublisher = companyZonePublisher;
+        this.companyZoneAuditRepository = companyZoneAuditRepository;
         this.jwtUtil = jwtUtil;
     }
 
@@ -128,7 +141,7 @@ public class ZoneServiceImpl implements ZoneService {
             throw new RestException("Zone Not Found");
         }
 
-        final List<AgentZone> agentZones = agentZoneRepository.findAllZoneWithIdAndAgents(id);
+        final List<AgentZone> agentZones = agentZoneRepository.findAllZoneWithIdZoneAndAgents(id);
         if(agentZones.isEmpty()){
             log.info("For This Zone NOT Have Agents: {} , city: {} ", optionalZone.get().getName(), optionalZone.get().getCitta().getNome());
         }
@@ -144,11 +157,61 @@ public class ZoneServiceImpl implements ZoneService {
             audit.setOperationDate(LocalDateTime.now());
             audit.setOperationAudit(OperationAuditEnum.REVOKE.name());
             audit.setZoneId(String.valueOf(agentZone.getZone().getId()));
-            audit.setZoneId(String.valueOf(agentZone.getAgent().getId()));
+            audit.setAgentId(String.valueOf(agentZone.getAgent().getId()));
             agentZonePublisher.publish(audit);
+        }
+
+        //ZONE COMPANY METHOD SYNC
+
+        final List<ZoneCompany> zoneCompanies = zoneCompanyRepository.findAllCompanyFromZone(id);
+
+        for(final ZoneCompany zoneCompany: zoneCompanies){
+            zoneCompany.setDeleted(Boolean.TRUE);
+            zoneCompanyRepository.save(zoneCompany);
+
+            final CompanyZoneEventDTO companyZoneEventDTO = new CompanyZoneEventDTO();
+            companyZoneEventDTO.setCompanyId(String.valueOf(zoneCompany.getCompany().getId()));
+            companyZoneEventDTO.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
+            companyZoneEventDTO.setOperationDate(LocalDateTime.now());
+            companyZoneEventDTO.setOperationAudit(OperationAuditEnum.REVOKE.name());
+            companyZoneEventDTO.setZoneId(String.valueOf(zoneCompany.getZone().getId()));
+            companyZonePublisher.publish(companyZoneEventDTO);
         }
 
         optionalZone.get().setDeleted(Boolean.TRUE);
         zoneRepository.save(optionalZone.get());
+    }
+
+    @Override
+    public List<CompanyResponse> findAllCompanyFromZoneId(Long zoneId) {
+        final List<ZoneCompany> zoneCompanies = zoneCompanyRepository.findAllCompanyFromZone(zoneId);
+        if(zoneCompanies.isEmpty()){
+            log.warn("Not Exist Company For This Zone");
+            return new ArrayList<>();
+        }
+        final List<CompanyResponse> companyResponses = new ArrayList<>();
+        for(final ZoneCompany zoneCompany: zoneCompanies){
+            companyResponses.add(
+                    new CompanyResponse(
+                            zoneCompany.getCompany().getId(),
+                            zoneCompany.getCompany().getName(),
+                            zoneCompany.getCompany().getPiva(),
+                            zoneCompany.getCompany().getCode(),
+                            zoneCompany.getCompany().getDescription()
+                    )
+            );
+        }
+        return companyResponses;
+    }
+
+    @Override
+    public void audit(CompanyZoneEventDTO companyZoneEventDTO) {
+        final CompanyZoneAudit audit = new CompanyZoneAudit();
+        audit.setCreatedAt(companyZoneEventDTO.getOperationDate());
+        audit.setOperation(OperationAuditEnum.valueOf(companyZoneEventDTO.getOperationAudit()));
+        audit.setIdZone(Long.valueOf(companyZoneEventDTO.getZoneId()));
+        audit.setIdCompany(Long.valueOf(companyZoneEventDTO.getCompanyId()));
+        audit.setUserOperationId(Long.valueOf(companyZoneEventDTO.getOperationBy()));
+        companyZoneAuditRepository.save(audit);
     }
 }

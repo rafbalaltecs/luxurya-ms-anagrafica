@@ -1,5 +1,7 @@
 package anagrafica.configuration;
 
+import anagrafica.subscriber.AgentZoneSubscriber;
+import anagrafica.subscriber.CompanyZoneSubscriber;
 import anagrafica.subscriber.LoginSubscriber;
 import anagrafica.utils.RedisTopics;
 import org.springframework.context.annotation.Bean;
@@ -14,7 +16,9 @@ public class RedisSubscriberConfig {
     @Bean
     public RedisMessageListenerContainer redisContainer(
             RedisConnectionFactory factory,
-            LoginSubscriber loginSubscriber) {
+            LoginSubscriber loginSubscriber,
+            AgentZoneSubscriber agentZoneSubscribe,
+            CompanyZoneSubscriber companyZoneSubscriber) {
 
         RedisMessageListenerContainer container =
                 new RedisMessageListenerContainer();
@@ -24,6 +28,16 @@ public class RedisSubscriberConfig {
         container.addMessageListener(
                 loginSubscriber,
                 new ChannelTopic(RedisTopics.LOGIN)
+        );
+
+        container.addMessageListener(
+                agentZoneSubscribe,
+                new ChannelTopic(RedisTopics.AGENT_ZONE)
+        );
+
+        container.addMessageListener(
+                companyZoneSubscriber,
+                new ChannelTopic(RedisTopics.COMPANY_ZONE)
         );
         return container;
     }

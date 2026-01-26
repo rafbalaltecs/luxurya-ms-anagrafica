@@ -3,11 +3,11 @@ package anagrafica.service.agent.impl;
 import anagrafica.dto.agent.AgentRequest;
 import anagrafica.dto.agent.AgentResponse;
 import anagrafica.dto.event.AgentZoneEventDTO;
-import anagrafica.dto.zone.ZoneRequest;
 import anagrafica.dto.zone.ZoneResponse;
 import anagrafica.entity.Agent;
 import anagrafica.entity.AgentZone;
 import anagrafica.entity.User;
+import anagrafica.entity.Zone;
 import anagrafica.entity.audit.AgentZoneAudit;
 import anagrafica.entity.audit.OperationAuditEnum;
 import anagrafica.exception.RestException;
@@ -143,21 +143,15 @@ public class AgentServiceImpl implements AgentService {
         final List<AgentZone> agentZones = agentZoneRepository.findAllZonesFromAgentId(id);
         if(agentZones.isEmpty()){
             log.warn("Not Zone For This Agent , name: {} , surname: {}", optionalAgent.get().getName(), optionalAgent.get().getSurname());
-        }
+        }else{
+            for(final AgentZone agentZone: agentZones){
+                log.info("This Agent cancelled in this Zone, name: {} , surname: {}", agentZone.getAgent().getName(), agentZone.getAgent().getSurname());
+                agentZone.setIsActive(Boolean.FALSE);
+                agentZone.setDeleted(Boolean.FALSE);
+                agentZoneRepository.save(agentZone);
+            }
 
-        for(final AgentZone agentZone: agentZones){
-            log.info("This Agent cancelled in this Zone, name: {} , surname: {}", agentZone.getAgent().getName(), agentZone.getAgent().getSurname());
-            agentZone.setIsActive(Boolean.FALSE);
-            agentZone.setDeleted(Boolean.FALSE);
-            agentZoneRepository.save(agentZone);
-
-            final AgentZoneEventDTO audit = new AgentZoneEventDTO();
-            audit.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
-            audit.setOperationDate(LocalDateTime.now());
-            audit.setOperationAudit(OperationAuditEnum.REVOKE.name());
-            audit.setZoneId(String.valueOf(agentZone.getZone().getId()));
-            audit.setZoneId(String.valueOf(agentZone.getAgent().getId()));
-            agentZonePublisher.publish(audit);
+            publishRevokeAllZone(agentZones);
         }
 
         optionalAgent.get().setDeleted(Boolean.TRUE);
@@ -194,4 +188,150 @@ public class AgentServiceImpl implements AgentService {
         audit.setUserOperationId(Long.valueOf(eventDTO.getOperationBy()));
         auditAgentZoneRepository.save(audit);
     }
+
+    @Override
+    @Transactional
+    public void addZoneToAgent(Long idAgent, Long idZone) {
+        final Optional<Agent> optionalAgent = agentRepository.findById(idAgent);
+        if(optionalAgent.isEmpty()){
+            throw new RestException("Agent Not Found");
+        }
+
+        final Optional<Zone> optionalZone = zoneRepository.findById(idZone);
+
+        if(optionalZone.isEmpty()){
+            throw new RestException("Zone Not Found");
+        }
+
+        final Optional<AgentZone> optionalAgentZone = agentZoneRepository.findAgentZoneWithSameData(
+                idAgent, idZone
+        );
+
+        if(optionalAgentZone.isPresent()){
+            log.warn("Exist This Associate With Agent ID: {} And Zone: {} ", optionalAgent.get().getId(), optionalZone.get().getName());
+            throw new RestException("Exist This Associate");
+        }
+
+        final List<AgentZone> agentZoneList = agentZoneRepository.findAllZoneWithIdZoneAndAgents(idZone);
+
+        if(!agentZoneList.isEmpty()){
+            for(final AgentZone agentZoneItem: agentZoneList){
+                agentZoneItem.setDeleted(Boolean.TRUE);
+                agentZoneRepository.save(agentZoneItem);
+            }
+            publishRevokeAllZone(agentZoneList);
+        }
+
+        final AgentZone agentZone = new AgentZone();
+        agentZone.setZone(optionalZone.get());
+        agentZone.setAgent(optionalAgent.get());
+
+        agentZoneRepository.save(agentZone);
+
+        final AgentZoneEventDTO audit = new AgentZoneEventDTO();
+        audit.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
+        audit.setOperationDate(LocalDateTime.now());
+        audit.setOperationAudit(OperationAuditEnum.ADD.name());
+        audit.setZoneId(String.valueOf(agentZone.getZone().getId()));
+        audit.setZoneId(String.valueOf(agentZone.getAgent().getId()));
+        agentZonePublisher.publish(audit);
+
+    }
+
+    @Override
+    @Transactional
+    public void removeZoneToAgent(Long id, Long idAgent, Long idZone) {
+        final Optional<AgentZone> optionalAgentZone = agentZoneRepository.findById(id);
+
+        if(optionalAgentZone.isEmpty()){
+            throw new RestException("AgentZone Not Found");
+        }
+
+        final Optional<Agent> optionalAgent = agentRepository.findById(idAgent);
+        if(optionalAgent.isEmpty()){
+            throw new RestException("Agent Not Found");
+        }
+
+        final Optional<Zone> optionalZone = zoneRepository.findById(idZone);
+
+        if(optionalZone.isEmpty()){
+            throw new RestException("Zone Not Found");
+        }
+
+        final Optional<AgentZone> optionalAgentZoneExist = agentZoneRepository.findAgentZoneWithSameData(
+                idAgent, idZone
+        );
+
+        if(optionalAgentZoneExist.isPresent()){
+            if(optionalAgentZoneExist.get().getId().equals(id)){
+
+                optionalAgentZoneExist.get().setDeleted(Boolean.TRUE);
+                agentZoneRepository.save(optionalAgentZoneExist.get());
+
+                final AgentZoneEventDTO audit = new AgentZoneEventDTO();
+                audit.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
+                audit.setOperationDate(LocalDateTime.now());
+                audit.setOperationAudit(OperationAuditEnum.REVOKE.name());
+                audit.setZoneId(String.valueOf(optionalAgentZoneExist.get().getZone().getId()));
+                audit.setZoneId(String.valueOf(optionalAgentZoneExist.get().getAgent().getId()));
+                agentZonePublisher.publish(audit);
+            }else{
+                log.error("ATTENTION: Exist Another Associate For AgentZone , Agent: {} - Zone: {}", optionalAgent.get().getId(), optionalZone.get().getId());
+                throw new RestException("Exist another associate to AgentZone");
+            }
+        }else{
+            throw new RestException("Not Exist This Associate");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void removeZoneToAgent(Long idAgent, Long idZone) {
+
+        final Optional<Agent> optionalAgent = agentRepository.findById(idAgent);
+        if(optionalAgent.isEmpty()){
+            throw new RestException("Agent Not Found");
+        }
+
+        final Optional<Zone> optionalZone = zoneRepository.findById(idZone);
+
+        if(optionalZone.isEmpty()){
+            throw new RestException("Zone Not Found");
+        }
+
+        final Optional<AgentZone> optionalAgentZoneExist = agentZoneRepository.findAgentZoneWithSameData(
+                idAgent, idZone
+        );
+
+        if(optionalAgentZoneExist.isPresent()){
+            optionalAgentZoneExist.get().setDeleted(Boolean.TRUE);
+            agentZoneRepository.save(optionalAgentZoneExist.get());
+
+            final AgentZoneEventDTO audit = new AgentZoneEventDTO();
+            audit.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
+            audit.setOperationDate(LocalDateTime.now());
+            audit.setOperationAudit(OperationAuditEnum.REVOKE.name());
+            audit.setZoneId(String.valueOf(optionalAgentZoneExist.get().getZone().getId()));
+            audit.setZoneId(String.valueOf(optionalAgentZoneExist.get().getAgent().getId()));
+            agentZonePublisher.publish(audit);
+        }else{
+            throw new RestException("Not Exist This Associate");
+        }
+    }
+
+
+    private void publishRevokeAllZone(final List<AgentZone> agentZones){
+        final LocalDateTime now = LocalDateTime.now();
+        for(final AgentZone agentZone: agentZones){
+            final AgentZoneEventDTO audit = new AgentZoneEventDTO();
+            audit.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
+            audit.setOperationDate(now);
+            audit.setOperationAudit(OperationAuditEnum.REVOKE.name());
+            audit.setZoneId(String.valueOf(agentZone.getZone().getId()));
+            audit.setZoneId(String.valueOf(agentZone.getAgent().getId()));
+            agentZonePublisher.publish(audit);
+        }
+    }
+
+
 }

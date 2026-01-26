@@ -33,6 +33,23 @@ public class AgentController {
         return ResponseEntity.ok(agentService.findZonesFromAgent(id));
     }
 
+    @PutMapping(value = "/{id}/zone/{zoneId}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void addZoneToAgent(
+            @PathVariable("id") Long agentId,
+            @PathVariable("zoneId") Long zoneId
+    ){
+        agentService.addZoneToAgent(agentId, zoneId);
+    }
+
+
+    @DeleteMapping(value = "/{id}/zone/{zoneId}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void deleteZoneToAgent(
+            @PathVariable("id") Long agentId,
+            @PathVariable("zoneId") Long zoneId
+    ){
+        agentService.removeZoneToAgent(agentId, zoneId);
+    }
+
     @PostMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<AgentResponse> save(@RequestBody final AgentRequest request){
         return ResponseEntity.ok(agentService.create(request));

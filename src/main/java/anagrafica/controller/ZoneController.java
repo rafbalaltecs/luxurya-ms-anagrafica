@@ -2,6 +2,7 @@ package anagrafica.controller;
 
 import anagrafica.dto.agent.AgentRequest;
 import anagrafica.dto.agent.AgentResponse;
+import anagrafica.dto.company.CompanyResponse;
 import anagrafica.dto.zone.ZoneRequest;
 import anagrafica.dto.zone.ZoneResponse;
 import anagrafica.service.zone.ZoneService;
@@ -28,6 +29,12 @@ public class ZoneController {
     public ResponseEntity<List<ZoneResponse>> findAll(@Param("offset") Integer offset, @Param("limit") Integer limit){
         return ResponseEntity.ok(zoneService.findAll());
     }
+
+    @GetMapping(value = "/{id}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<List<CompanyResponse>> findAllCompanyFromZoneId(@PathVariable("id") Long id){
+        return ResponseEntity.ok(zoneService.findAllCompanyFromZoneId(id));
+    }
+
 
     @PostMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<ZoneResponse> save(@RequestBody final ZoneRequest request){

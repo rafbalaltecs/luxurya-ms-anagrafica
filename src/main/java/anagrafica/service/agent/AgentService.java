@@ -15,4 +15,9 @@ public interface AgentService {
 
     List<ZoneResponse> findZonesFromAgent(final Long agentId);
     void auditAgentZone(final AgentZoneEventDTO eventDTO);
+
+    void addZoneToAgent(final Long idAgent , final Long idZone);
+    void removeZoneToAgent(final Long id, final Long idAgent, final Long idZone);
+
+    void removeZoneToAgent(final Long idAgent, final Long idZone);
 }
