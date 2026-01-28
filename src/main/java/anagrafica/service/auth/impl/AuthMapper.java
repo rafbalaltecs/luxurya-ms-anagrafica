@@ -1,11 +1,14 @@
 package anagrafica.service.auth.impl;
 
+import anagrafica.dto.shared.UserDataShared;
 import anagrafica.dto.user.UserResponse;
 import anagrafica.entity.PermissionUser;
 import anagrafica.entity.User;
 import anagrafica.service.user.PermissionService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,6 +36,20 @@ public class AuthMapper {
                 userResponse.setTypeUsers(typeUsers);
             }
             return userResponse;
+        }
+        return null;
+    }
+
+    public UserDataShared getUserDataShared(
+            final User user,
+            final String token){
+        if(user != null && StringUtils.isNotEmpty(token)){
+            final UserDataShared userDataShared = new UserDataShared();
+            userDataShared.setUserId(user.getId());
+            userDataShared.setUsername(user.getEmail());
+            userDataShared.setToken(token);
+            userDataShared.setLoginAt(LocalDateTime.now());
+            return userDataShared;
         }
         return null;
     }

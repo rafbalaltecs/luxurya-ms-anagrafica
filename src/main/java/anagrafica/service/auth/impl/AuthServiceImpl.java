@@ -3,11 +3,13 @@ package anagrafica.service.auth.impl;
 import anagrafica.dto.auth.LoginRequest;
 import anagrafica.dto.auth.LoginResponse;
 import anagrafica.dto.event.LoginEventDTO;
+import anagrafica.dto.shared.UserDataShared;
 import anagrafica.entity.User;
 import anagrafica.exception.RestException;
 import anagrafica.publisher.LoginPublisher;
 import anagrafica.repository.user.UserRepository;
 import anagrafica.service.auth.AuthService;
+import anagrafica.service.cache.RedisService;
 import anagrafica.utils.JwtUtil;
 import anagrafica.utils.PasswordUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,14 +29,16 @@ import java.util.stream.Collectors;
 public class AuthServiceImpl implements AuthService {
 
     private final JwtUtil jwtUtil;
+    private final RedisService redisService;
     private final UserRepository userRepository;
 
     private final AuthMapper authMapper;
 
     private final LoginPublisher loginPublisher;
 
-    public AuthServiceImpl(JwtUtil jwtUtil, UserRepository userRepository, AuthMapper authMapper, LoginPublisher loginPublisher) {
+    public AuthServiceImpl(JwtUtil jwtUtil, RedisService redisService, UserRepository userRepository, AuthMapper authMapper, LoginPublisher loginPublisher) {
         this.jwtUtil = jwtUtil;
+        this.redisService = redisService;
         this.userRepository = userRepository;
         this.authMapper = authMapper;
         this.loginPublisher = loginPublisher;
@@ -76,6 +81,10 @@ public class AuthServiceImpl implements AuthService {
         claims.put("routes", compactRoutes(authResponse.getUser().getRoutes()));
         authResponse.setToken(jwtUtil.generateToken(loginRequest.getUsername(), claims));
 
+        final UserDataShared userDataShared = authMapper.getUserDataShared(optionalUser.get(), authResponse.getToken());
+        userDataShared.setRoutes(authResponse.getUser().getRoutes());
+
+        redisService.saveWithExpiration(authResponse.getToken(), userDataShared, 3600, TimeUnit.SECONDS);
         loginPublisher.publish(new LoginEventDTO(optionalUser.get().getEmail(), LocalDateTime.now().toString()));
 
         return authResponse ;
