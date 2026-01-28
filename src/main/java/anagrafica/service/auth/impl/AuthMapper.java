@@ -48,7 +48,7 @@ public class AuthMapper {
             userDataShared.setUserId(user.getId());
             userDataShared.setUsername(user.getEmail());
             userDataShared.setToken(token);
-            userDataShared.setLoginAt(LocalDateTime.now());
+            userDataShared.setLoginAt(LocalDateTime.now().toString());
             return userDataShared;
         }
         return null;
