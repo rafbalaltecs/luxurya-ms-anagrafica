@@ -42,6 +42,8 @@ spring:
       port: 6379
       password: ""     # lascia vuoto se Redis non richiede autenticazione
       timeout: 6000    # millisecondi
+      pool:
+        enabled: true
 
   # --- LOGGING ---
   logging:
