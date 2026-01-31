@@ -328,7 +328,7 @@ public class AgentServiceImpl implements AgentService {
             audit.setOperationDate(now);
             audit.setOperationAudit(OperationAuditEnum.REVOKE.name());
             audit.setZoneId(String.valueOf(agentZone.getZone().getId()));
-            audit.setZoneId(String.valueOf(agentZone.getAgent().getId()));
+            audit.setAgentId(String.valueOf(agentZone.getAgent().getId()));
             agentZonePublisher.publish(audit);
         }
     }

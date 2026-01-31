@@ -7,21 +7,22 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "Agent_Zone")
+@Table(name = "Placer")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AgentZone extends AuditableEntity {
+public class Placer extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "Name")
+    private String name;
+    @Column(name = "Surname")
+    private String surname;
     @ManyToOne
-    @JoinColumn(name = "ZoneId")
-    private Zone zone;
-    @ManyToOne
-    @JoinColumn(name = "AgentId")
-    private Agent agent;
+    @JoinColumn(name = "UserId")
+    private User user;
     @Column(name = "IsActive")
     private Boolean isActive;
 }

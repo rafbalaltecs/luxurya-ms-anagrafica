@@ -3,6 +3,7 @@ package anagrafica.configuration;
 import anagrafica.subscriber.AgentZoneSubscriber;
 import anagrafica.subscriber.CompanyZoneSubscriber;
 import anagrafica.subscriber.LoginSubscriber;
+import anagrafica.subscriber.PlacerZoneSubscriber;
 import anagrafica.utils.RedisTopics;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +19,8 @@ public class RedisSubscriberConfig {
             RedisConnectionFactory factory,
             LoginSubscriber loginSubscriber,
             AgentZoneSubscriber agentZoneSubscribe,
-            CompanyZoneSubscriber companyZoneSubscriber) {
+            CompanyZoneSubscriber companyZoneSubscriber,
+            PlacerZoneSubscriber placerZoneSubscriber) {
 
         RedisMessageListenerContainer container =
                 new RedisMessageListenerContainer();
@@ -38,6 +40,11 @@ public class RedisSubscriberConfig {
         container.addMessageListener(
                 companyZoneSubscriber,
                 new ChannelTopic(RedisTopics.COMPANY_ZONE)
+        );
+
+        container.addMessageListener(
+                placerZoneSubscriber,
+                new ChannelTopic(RedisTopics.PLACER_ZONE)
         );
         return container;
     }

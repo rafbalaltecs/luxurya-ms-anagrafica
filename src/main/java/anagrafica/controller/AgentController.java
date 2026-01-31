@@ -28,7 +28,7 @@ public class AgentController {
         return ResponseEntity.ok(agentService.findAll(offset, limit));
     }
 
-    @GetMapping(value = "/{id}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/{id}/zones", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<List<ZoneResponse>> findAllZones(@PathVariable("id") Long id){
         return ResponseEntity.ok(agentService.findZonesFromAgent(id));
     }
