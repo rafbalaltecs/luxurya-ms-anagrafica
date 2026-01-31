@@ -205,6 +205,11 @@ public class ZoneServiceImpl implements ZoneService {
     }
 
     @Override
+    public void addCompanyToZone(Long placerId, Long zoneId, Long companyId) {
+
+    }
+
+    @Override
     public void audit(CompanyZoneEventDTO companyZoneEventDTO) {
         final CompanyZoneAudit audit = new CompanyZoneAudit();
         audit.setCreatedAt(companyZoneEventDTO.getOperationDate());
