@@ -30,7 +30,7 @@ public class PlacerController {
         return ResponseEntity.ok(placerService.findAll(offset, limit));
     }
 
-    @GetMapping(value = "/{id}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/{id}/zones", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<List<ZoneResponse>> findAllZoneFromPlacerId(
             @PathVariable("id") Long id
     ){
