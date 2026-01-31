@@ -15,6 +15,7 @@ import lombok.Setter;
 public class ZoneCompany extends AuditableEntityExt{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Id")
     private Long id;
     @ManyToOne
     @JoinColumn(name = "CompanyId")

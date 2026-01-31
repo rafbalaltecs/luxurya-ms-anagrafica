@@ -171,8 +171,9 @@ public class AgentServiceImpl implements AgentService {
         final List<ZoneResponse> zoneResponses = new ArrayList<>();
         for(final AgentZone agentZone: agentZones){
             final ZoneResponse zoneResponse = new ZoneResponse();
+            zoneResponse.setId(agentZone.getZone().getId());
             zoneResponse.setCity(agentZone.getZone().getCitta().getNome());
-            zoneResponse.setName(zoneResponse.getName());
+            zoneResponse.setName(agentZone.getZone().getName());
             zoneResponses.add(zoneResponse);
         }
         return zoneResponses;
