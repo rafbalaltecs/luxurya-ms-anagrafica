@@ -86,7 +86,7 @@ public class AgentServiceImpl implements AgentService {
         agent.setName(request.getName());
         agent.setSurname(request.getSurname());
         agent.setUser(optionalUser.get());
-        agent.setCreatedBy(jwtUtil.getIdProfileLogged());
+        agent.setCreatedBy(jwtUtil.getIdProfileLogged().toString());
 
         agent = agentRepository.save(agent);
 
@@ -121,7 +121,7 @@ public class AgentServiceImpl implements AgentService {
 
         optionalAgent.get().setName(request.getName());
         optionalAgent.get().setSurname(request.getSurname());
-        optionalAgent.get().setUpdatedBy(jwtUtil.getIdProfileLogged());
+        optionalAgent.get().setUpdatedBy(jwtUtil.getIdProfileLogged().toString());
         agentRepository.save(optionalAgent.get());
 
         return new AgentResponse(

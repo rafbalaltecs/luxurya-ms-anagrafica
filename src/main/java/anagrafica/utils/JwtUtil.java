@@ -110,7 +110,7 @@ public class JwtUtil {
         try {
             Jws<Claims> claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             setUsernameLogged((String) claims.getBody().get("username"));
-            setIdProfileLogged((Long) claims.getBody().get("iduser"));
+            setIdProfileLogged(Long.valueOf( (Integer) claims.getBody().get("iduser") ));
             setIsAdmin((Boolean) claims.getBody().get("isAdmin"));
             setCompactRoutes((String) claims.getBody().get("routes"));
         } catch (JwtException ex) {

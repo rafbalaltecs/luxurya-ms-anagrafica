@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AgentZone extends AuditableEntity {
+public class AgentZone extends AuditableEntityExt {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

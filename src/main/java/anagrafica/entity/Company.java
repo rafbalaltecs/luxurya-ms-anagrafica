@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Company extends AuditableEntity {
+public class Company extends AuditableEntityExt {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -7,14 +7,15 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "agent")
+@Table(name = "Agent")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Agent extends AuditableEntity{
+public class Agent extends AuditableEntityExt{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Id")
     private Long id;
     @Column(name = "Name")
     private String name;
