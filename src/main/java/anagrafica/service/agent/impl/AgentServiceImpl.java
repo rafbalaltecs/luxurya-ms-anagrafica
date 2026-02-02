@@ -61,6 +61,7 @@ public class AgentServiceImpl implements AgentService {
                             agent.getId(),
                             agent.getName(),
                             agent.getSurname(),
+                            null,
                             null
                     )
             );
@@ -94,7 +95,8 @@ public class AgentServiceImpl implements AgentService {
                 agent.getId(),
                 request.getName(),
                 request.getSurname(),
-                request.getTelephone()
+                request.getTelephone(),
+                null
                 );
     }
 
@@ -128,7 +130,8 @@ public class AgentServiceImpl implements AgentService {
                 optionalAgent.get().getId(),
                 request.getName(),
                 request.getSurname(),
-                request.getTelephone()
+                request.getTelephone(),
+                null
         );
     }
 

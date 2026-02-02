@@ -1,5 +1,6 @@
 package anagrafica.dto.agent;
 
+import anagrafica.dto.zone.ZoneResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -10,4 +11,5 @@ public class AgentResponse {
     private String name;
     private String surname;
     private String telephone;
+    private ZoneResponse zona;
 }

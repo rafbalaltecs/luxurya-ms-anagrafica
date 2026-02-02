@@ -194,12 +194,19 @@ public class CompanyServiceImpl implements CompanyService {
                 final List<AgentZone> agentZoneList = agentZoneRepository.findAllZoneWithIdZoneAndAgents(zoneCompany.getZone().getId());
                 if(!agentZoneList.isEmpty()){
                     for(final AgentZone agentZone: agentZoneList){
+
+                        final ZoneResponse zoneResponse = new ZoneResponse();
+                        zoneResponse.setId(agentZone.getZone().getId());
+                        zoneResponse.setCity(agentZone.getZone().getCitta().getNome());
+                        zoneResponse.setName(agentZone.getZone().getName());
+
                         responses.add(
                                 new AgentResponse(
                                         agentZone.getAgent().getId(),
                                         agentZone.getAgent().getName(),
                                         agentZone.getAgent().getSurname(),
-                                        null
+                                        null,
+                                        zoneResponse
                                 )
                         );
                     }
