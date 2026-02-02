@@ -1,6 +1,7 @@
 package anagrafica.controller;
 
 
+import anagrafica.dto.agent.AgentResponse;
 import anagrafica.dto.company.CompanyRequest;
 import anagrafica.dto.company.CompanyResponse;
 import anagrafica.service.company.CompanyService;
@@ -27,6 +28,13 @@ public class CompanyController {
     @GetMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<List<CompanyResponse>> findAll(@Param("offset") Integer offset, @Param("limit") Integer limit){
         return ResponseEntity.ok(companyService.findAll(offset, limit));
+    }
+
+    @GetMapping(value = "/{id}/agents", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<List<AgentResponse>> findAllAgentsFromCompanyId(
+            @PathVariable("id") Long id
+    ){
+        return ResponseEntity.ok(companyService.findAllAgentsFromCompanyId(id));
     }
 
     @PostMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)

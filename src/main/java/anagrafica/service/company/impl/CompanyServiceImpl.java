@@ -2,13 +2,19 @@ package anagrafica.service.company.impl;
 
 import anagrafica.client.CompanyExecusClient;
 import anagrafica.client.response.execusbi.ExecusBICompanyInfoResponse;
+import anagrafica.dto.agent.AgentResponse;
 import anagrafica.dto.company.CompanyRequest;
 import anagrafica.dto.company.CompanyResponse;
+import anagrafica.dto.zone.ZoneResponse;
+import anagrafica.entity.AgentZone;
 import anagrafica.entity.Citta;
 import anagrafica.entity.Company;
+import anagrafica.entity.ZoneCompany;
 import anagrafica.exception.RestException;
+import anagrafica.repository.agent.AgentZoneRepository;
 import anagrafica.repository.company.CompanyRepository;
 import anagrafica.repository.geography.CittaRepository;
+import anagrafica.repository.zone.ZoneCompanyRepository;
 import anagrafica.service.company.CompanyService;
 import anagrafica.utils.JwtUtil;
 import jakarta.transaction.Transactional;
@@ -16,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,12 +33,17 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyExecusClient client;
     private final CittaRepository cittaRepository;
+    private final ZoneCompanyRepository zoneCompanyRepository;
+    private final AgentZoneRepository agentZoneRepository;
+
     private final JwtUtil jwtUtil;
 
-    public CompanyServiceImpl(CompanyRepository companyRepository, CompanyExecusClient client, CittaRepository cittaRepository, JwtUtil jwtUtil) {
+    public CompanyServiceImpl(CompanyRepository companyRepository, CompanyExecusClient client, CittaRepository cittaRepository, ZoneCompanyRepository zoneCompanyRepository, AgentZoneRepository agentZoneRepository, JwtUtil jwtUtil) {
         this.companyRepository = companyRepository;
         this.client = client;
         this.cittaRepository = cittaRepository;
+        this.zoneCompanyRepository = zoneCompanyRepository;
+        this.agentZoneRepository = agentZoneRepository;
         this.jwtUtil = jwtUtil;
     }
 
@@ -164,5 +176,37 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public List<CompanyResponse> findAll(Integer offset, Integer limit) {
         return List.of();
+    }
+
+    @Override
+    public List<AgentResponse> findAllAgentsFromCompanyId(Long companyId) {
+        final List<AgentResponse> responses = new ArrayList<>();
+        final Optional<Company> optionalCompany = companyRepository.findById(companyId);
+
+        if(optionalCompany.isEmpty()){
+            throw new RestException("Company Not Found");
+        }
+
+        final List<ZoneCompany> optionalZoneCompany = zoneCompanyRepository.findZoneFromCompany(companyId);
+
+        if(!optionalZoneCompany.isEmpty()){
+            for(final ZoneCompany zoneCompany: optionalZoneCompany){
+                final List<AgentZone> agentZoneList = agentZoneRepository.findAllZoneWithIdZoneAndAgents(zoneCompany.getZone().getId());
+                if(!agentZoneList.isEmpty()){
+                    for(final AgentZone agentZone: agentZoneList){
+                        responses.add(
+                                new AgentResponse(
+                                        agentZone.getAgent().getId(),
+                                        agentZone.getAgent().getName(),
+                                        agentZone.getAgent().getSurname(),
+                                        null
+                                )
+                        );
+                    }
+                }
+            }
+
+        }
+        return responses;
     }
 }

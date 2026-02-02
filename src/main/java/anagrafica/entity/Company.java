@@ -15,6 +15,7 @@ import lombok.Setter;
 public class Company extends AuditableEntityExt {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Id")
     private Long id;
     @Column(name = "Code")
     private String code;
