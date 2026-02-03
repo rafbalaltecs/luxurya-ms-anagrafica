@@ -3,6 +3,8 @@ package anagrafica.repository.company;
 import anagrafica.entity.Agent;
 import anagrafica.entity.Company;
 import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -11,6 +13,10 @@ import java.util.Optional;
 
 @Repository
 public interface CompanyRepository extends JpaRepository<Company, Long> {
+
+    @Query("SELECT c FROM Company c WHERE c.isDeleted = false")
+    Page<Company> findAllNotDeleted(Pageable pageable);
+
     @Query("SELECT c FROM Company c WHERE c.piva = :piva AND c.isDeleted = false")
     Optional<Company> findCompanyWithSamePiva(@Param("piva") String piva);
 

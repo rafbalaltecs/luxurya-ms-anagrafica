@@ -11,4 +11,7 @@ public class CompanyResponse {
     private String piva;
     private String code;
     private String description;
+    private String zona;
+    private String address;
+    private String telephone;
 }

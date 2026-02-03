@@ -6,6 +6,6 @@ import lombok.Data;
 public class AddressRequest {
     private String address;
     private String cap;
-    private Integer zoneId;
+    private Long zoneId;
     private String pr;
 }

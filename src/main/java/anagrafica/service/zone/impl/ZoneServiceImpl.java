@@ -198,7 +198,10 @@ public class ZoneServiceImpl implements ZoneService {
                             zoneCompany.getCompany().getName(),
                             zoneCompany.getCompany().getPiva(),
                             zoneCompany.getCompany().getCode(),
-                            zoneCompany.getCompany().getDescription()
+                            zoneCompany.getCompany().getDescription(),
+                            null,
+                            null,
+                            null
                     )
             );
         }
