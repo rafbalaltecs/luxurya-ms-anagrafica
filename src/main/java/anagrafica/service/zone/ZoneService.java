@@ -1,5 +1,6 @@
 package anagrafica.service.zone;
 
+import anagrafica.dto.agent.AgentResponse;
 import anagrafica.dto.company.CompanyResponse;
 import anagrafica.dto.event.CompanyZoneEventDTO;
 import anagrafica.dto.zone.ZoneRequest;
@@ -14,6 +15,7 @@ public interface ZoneService {
     void delete(final Long id);
 
     List<CompanyResponse> findAllCompanyFromZoneId(final Long zoneId);
+    List<AgentResponse> findAllAgentsFromZoneId(final Long zoneId);
     void addCompanyToZone(final Long placerId, final Long zoneId, final Long companyId);
     void audit(final CompanyZoneEventDTO companyZoneEventDTO);
 }

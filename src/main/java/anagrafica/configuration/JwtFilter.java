@@ -63,7 +63,8 @@ public class JwtFilter implements Filter {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             resp.setContentType("application/json");
-            throw new RestException("Missing or invalid Authorization header");
+            resp.getWriter().write("{\"error\":\"Missing or invalid Authorization header\"}");
+            return;
         }
 
         String token = authHeader.substring(7);
@@ -71,7 +72,8 @@ public class JwtFilter implements Filter {
         if (jwtUtil.getUsernameLogged() == null) {
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             resp.setContentType("application/json");
-            throw new RestException("Invalid or expired token");
+            resp.getWriter().write("{\"error\":\"Invalid or expired token\"}");
+            return;
         }
 
         if(!routeAuthorizationService.isAllowed(req.getRequestURI(), jwtUtil.getRoutes(), jwtUtil.getUsernameLogged())){

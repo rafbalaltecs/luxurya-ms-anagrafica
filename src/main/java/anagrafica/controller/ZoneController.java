@@ -35,7 +35,10 @@ public class ZoneController {
         return ResponseEntity.ok(zoneService.findAllCompanyFromZoneId(id));
     }
 
-
+    @GetMapping(value = "/{id}/agents", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<List<AgentResponse>> findAllAgentsFromZone(@PathVariable("id") Long id){
+        return ResponseEntity.ok(zoneService.findAllAgentsFromZoneId(id));
+    }
 
     @PostMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<ZoneResponse> save(@RequestBody final ZoneRequest request){

@@ -1,5 +1,6 @@
 package anagrafica.service.zone.impl;
 
+import anagrafica.dto.agent.AgentResponse;
 import anagrafica.dto.company.CompanyResponse;
 import anagrafica.dto.event.AgentZoneEventDTO;
 import anagrafica.dto.event.CompanyZoneEventDTO;
@@ -202,6 +203,33 @@ public class ZoneServiceImpl implements ZoneService {
             );
         }
         return companyResponses;
+    }
+
+    @Override
+    public List<AgentResponse> findAllAgentsFromZoneId(Long zoneId) {
+        final List<AgentResponse> responses = new ArrayList<>();
+        final List<AgentZone> agentZones = agentZoneRepository.findAllZoneWithIdZoneAndAgents(zoneId);
+        if(agentZones.isEmpty()){
+            throw new RestException("AgentZone Not Found");
+        }
+
+        for(final AgentZone agentZone: agentZones){
+            final ZoneResponse zoneResponse = new ZoneResponse();
+            zoneResponse.setId(agentZone.getZone().getId());
+            zoneResponse.setName(agentZone.getZone().getName());
+            zoneResponse.setCity(agentZone.getZone().getCitta().getNome());
+            responses.add(
+                    new AgentResponse(
+                            agentZone.getAgent().getId(),
+                            agentZone.getAgent().getName(),
+                            agentZone.getAgent().getSurname(),
+                            null,
+                            zoneResponse
+                    )
+            );
+        }
+
+        return responses;
     }
 
     @Override

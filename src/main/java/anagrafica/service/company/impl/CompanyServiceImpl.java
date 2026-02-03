@@ -17,6 +17,7 @@ import anagrafica.repository.geography.CittaRepository;
 import anagrafica.repository.zone.ZoneCompanyRepository;
 import anagrafica.service.company.CompanyService;
 import anagrafica.utils.JwtUtil;
+import anagrafica.utils.MethodUtils;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -50,6 +51,10 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     @Transactional
     public CompanyResponse create(CompanyRequest request) {
+
+        if(!MethodUtils.isPartitaIvaValida(request.getPiva())){
+            throw new RestException("Piva is Not Valid");
+        }
 
         final Optional<Company> optionalCompanyWithPiva = companyRepository.findCompanyWithSamePiva(request.getPiva().trim());
         final Optional<Company> optionalCompanyWithSameName = companyRepository.findCompanyWithSameName(request.getName().trim());
@@ -102,6 +107,10 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     @Transactional
     public CompanyResponse update(Long id, CompanyRequest request) {
+
+        if(!MethodUtils.isPartitaIvaValida(request.getPiva())){
+            throw new RestException("Piva is Not Valid");
+        }
 
         final Optional<Company> optionalCompany = companyRepository.findById(id);
 
