@@ -58,7 +58,7 @@ public class CompanyServiceImpl implements CompanyService {
 
         final Optional<Company> optionalCompanyWithPiva = companyRepository.findCompanyWithSamePiva(request.getPiva().trim());
         final Optional<Company> optionalCompanyWithSameName = companyRepository.findCompanyWithSameName(request.getName().trim());
-        final Optional<Company> optionalCompanyWithCode = companyRepository.findCompanyWithSameCode(request.getCode().trim());
+       // final Optional<Company> optionalCompanyWithCode = companyRepository.findCompanyWithSameCode(request.getCode().trim());
 
         if(optionalCompanyWithPiva.isPresent()){
             throw new RestException("Exist Company With Same PIVA");
@@ -68,9 +68,10 @@ public class CompanyServiceImpl implements CompanyService {
             throw new RestException("Exist Company With Same Name");
         }
 
+        /*
         if(optionalCompanyWithCode.isPresent()){
             throw new RestException("Exist Company With Same Code");
-        }
+        }*/
 
         Company company = new Company();
 
@@ -94,6 +95,8 @@ public class CompanyServiceImpl implements CompanyService {
         company.setDescription(request.getDescription());
 
         company = companyRepository.save(company);
+        company.setCode("C-" + company.getId().toString());
+        companyRepository.save(company);
 
         return new CompanyResponse(
                 company.getId(),
@@ -120,7 +123,7 @@ public class CompanyServiceImpl implements CompanyService {
 
         final Optional<Company> optionalCompanyWithPiva = companyRepository.findCompanyWithSamePiva(request.getPiva().trim());
         final Optional<Company> optionalCompanyWithSameName = companyRepository.findCompanyWithSameName(request.getName().trim());
-        final Optional<Company> optionalCompanyWithCode = companyRepository.findCompanyWithSameCode(request.getCode().trim());
+       // final Optional<Company> optionalCompanyWithCode = companyRepository.findCompanyWithSameCode(request.getCode().trim());
 
         if(optionalCompanyWithPiva.isPresent()){
             if(!optionalCompanyWithPiva.get().getId().equals(optionalCompany.get().getId())){
@@ -134,11 +137,11 @@ public class CompanyServiceImpl implements CompanyService {
             }
         }
 
-        if(optionalCompanyWithCode.isPresent()){
+        /*if(optionalCompanyWithCode.isPresent()){
             if(!optionalCompanyWithCode.get().getId().equals(optionalCompany.get().getId())) {
                 throw new RestException("Exist Company With Same Code");
             }
-        }
+        }*/
 
         try{
             final ExecusBICompanyInfoResponse response = client.searchByCf(request.getPiva());
