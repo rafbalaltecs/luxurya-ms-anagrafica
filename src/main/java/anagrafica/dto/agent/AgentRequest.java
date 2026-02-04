@@ -8,4 +8,5 @@ public class AgentRequest {
     private String surname;
     private String telephone;
     private Long userId;
+    private Long zoneId;
 }

@@ -21,6 +21,7 @@ import anagrafica.service.agent.AgentService;
 import anagrafica.utils.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -83,6 +84,12 @@ public class AgentServiceImpl implements AgentService {
             throw new RestException("User Not Found");
         }
 
+        final Optional<Zone> optionalZone = zoneRepository.findById(request.getZoneId());
+
+        if(optionalZone.isEmpty()){
+            throw new RestException("Zone Not Found");
+        }
+
         Agent agent = new Agent();
         agent.setName(request.getName());
         agent.setSurname(request.getSurname());
@@ -91,12 +98,19 @@ public class AgentServiceImpl implements AgentService {
 
         agent = agentRepository.save(agent);
 
+        addZoneToAgent(agent.getId(), optionalZone.get().getId());
+
+        final ZoneResponse zoneResponse = new ZoneResponse();
+        zoneResponse.setCity(optionalZone.get().getCitta().getNome());
+        zoneResponse.setName(optionalZone.get().getName());
+        zoneResponse.setId(optionalZone.get().getId());
+
         return new AgentResponse(
                 agent.getId(),
                 request.getName(),
                 request.getSurname(),
                 request.getTelephone(),
-                null
+                zoneResponse
                 );
     }
 
@@ -121,17 +135,30 @@ public class AgentServiceImpl implements AgentService {
             throw new RestException("User Not Found");
         }
 
+        final Optional<Zone> optionalZone = zoneRepository.findById(request.getZoneId());
+
+        if(optionalZone.isEmpty()){
+            throw new RestException("Zone Not Found");
+        }
+
         optionalAgent.get().setName(request.getName());
         optionalAgent.get().setSurname(request.getSurname());
         optionalAgent.get().setUpdatedBy(jwtUtil.getIdProfileLogged().toString());
         agentRepository.save(optionalAgent.get());
+
+        addZoneToAgent(optionalAgent.get().getId(), optionalZone.get().getId());
+
+        final ZoneResponse zoneResponse = new ZoneResponse();
+        zoneResponse.setCity(optionalZone.get().getCitta().getNome());
+        zoneResponse.setName(optionalZone.get().getName());
+        zoneResponse.setId(optionalZone.get().getId());
 
         return new AgentResponse(
                 optionalAgent.get().getId(),
                 request.getName(),
                 request.getSurname(),
                 request.getTelephone(),
-                null
+                zoneResponse
         );
     }
 
