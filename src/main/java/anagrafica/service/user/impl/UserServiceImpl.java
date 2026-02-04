@@ -5,11 +5,15 @@ import anagrafica.dto.user.UserResponse;
 import anagrafica.entity.User;
 import anagrafica.repository.user.UserRepository;
 import anagrafica.service.user.UserService;
+import anagrafica.utils.MethodUtils;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -23,8 +27,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse findAll() {
-        return null;
+    public List<UserResponse> findAll(final Integer offset, final Integer limit) {
+        final List<UserResponse> userResponses = new ArrayList<>();
+        final Page<User> userPage = userRepository.findAllNotDeleted(MethodUtils.getPagination(offset, limit));
+        if(!userPage.isEmpty()){
+            userPage.forEach(user -> {
+                final UserResponse userResponse = new UserResponse();
+                userResponse.setId(user.getId());
+                userResponse.setEmail(user.getEmail());
+                userResponses.add(userResponse);
+            });
+        }
+        return userResponses;
     }
 
     @Override

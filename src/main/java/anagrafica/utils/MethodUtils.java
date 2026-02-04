@@ -1,5 +1,8 @@
 package anagrafica.utils;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 public class MethodUtils {
     public static boolean isPartitaIvaValida(String piva) {
         if (piva == null) return false;
@@ -26,5 +29,9 @@ public class MethodUtils {
         }
 
         return somma % 10 == 0;
+    }
+
+    public static Pageable getPagination(final Integer offset, final Integer limit){
+        return PageRequest.of(offset != null ? offset:0, limit!=null ? limit:10);
     }
 }
