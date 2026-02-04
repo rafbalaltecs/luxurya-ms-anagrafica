@@ -155,7 +155,7 @@ public class ZoneServiceImpl implements ZoneService {
 
             final AgentZoneEventDTO audit = new AgentZoneEventDTO();
             audit.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
-            audit.setOperationDate(LocalDateTime.now());
+            audit.setOperationDate(LocalDateTime.now().toString());
             audit.setOperationAudit(OperationAuditEnum.REVOKE.name());
             audit.setZoneId(String.valueOf(agentZone.getZone().getId()));
             audit.setAgentId(String.valueOf(agentZone.getAgent().getId()));

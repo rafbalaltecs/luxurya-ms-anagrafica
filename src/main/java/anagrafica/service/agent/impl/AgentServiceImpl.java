@@ -223,7 +223,7 @@ public class AgentServiceImpl implements AgentService {
     @Override
     public void auditAgentZone(AgentZoneEventDTO eventDTO) {
         final AgentZoneAudit audit = new AgentZoneAudit();
-        audit.setCreatedAt(eventDTO.getOperationDate());
+        audit.setCreatedAt(LocalDateTime.parse(eventDTO.getOperationDate()));
         audit.setOperation(OperationAuditEnum.valueOf(eventDTO.getOperationAudit()));
         audit.setIdZone(Long.valueOf(eventDTO.getZoneId()));
         audit.setIdAgent(Long.valueOf(eventDTO.getAgentId()));
@@ -267,12 +267,13 @@ public class AgentServiceImpl implements AgentService {
         final AgentZone agentZone = new AgentZone();
         agentZone.setZone(optionalZone.get());
         agentZone.setAgent(optionalAgent.get());
+        agentZone.setIsActive(Boolean.TRUE);
 
         agentZoneRepository.save(agentZone);
 
         final AgentZoneEventDTO audit = new AgentZoneEventDTO();
         audit.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
-        audit.setOperationDate(LocalDateTime.now());
+        audit.setOperationDate(LocalDateTime.now().toString());
         audit.setOperationAudit(OperationAuditEnum.ADD.name());
         audit.setZoneId(String.valueOf(agentZone.getZone().getId()));
         audit.setZoneId(String.valueOf(agentZone.getAgent().getId()));
@@ -312,7 +313,7 @@ public class AgentServiceImpl implements AgentService {
 
                 final AgentZoneEventDTO audit = new AgentZoneEventDTO();
                 audit.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
-                audit.setOperationDate(LocalDateTime.now());
+                audit.setOperationDate(LocalDateTime.now().toString());
                 audit.setOperationAudit(OperationAuditEnum.REVOKE.name());
                 audit.setZoneId(String.valueOf(optionalAgentZoneExist.get().getZone().getId()));
                 audit.setZoneId(String.valueOf(optionalAgentZoneExist.get().getAgent().getId()));
@@ -351,7 +352,7 @@ public class AgentServiceImpl implements AgentService {
 
             final AgentZoneEventDTO audit = new AgentZoneEventDTO();
             audit.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
-            audit.setOperationDate(LocalDateTime.now());
+            audit.setOperationDate(LocalDateTime.now().toString());
             audit.setOperationAudit(OperationAuditEnum.REVOKE.name());
             audit.setZoneId(String.valueOf(optionalAgentZoneExist.get().getZone().getId()));
             audit.setZoneId(String.valueOf(optionalAgentZoneExist.get().getAgent().getId()));
@@ -367,7 +368,7 @@ public class AgentServiceImpl implements AgentService {
         for(final AgentZone agentZone: agentZones){
             final AgentZoneEventDTO audit = new AgentZoneEventDTO();
             audit.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
-            audit.setOperationDate(now);
+            audit.setOperationDate(now.toString());
             audit.setOperationAudit(OperationAuditEnum.REVOKE.name());
             audit.setZoneId(String.valueOf(agentZone.getZone().getId()));
             audit.setAgentId(String.valueOf(agentZone.getAgent().getId()));

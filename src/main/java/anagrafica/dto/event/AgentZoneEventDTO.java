@@ -9,6 +9,6 @@ public class AgentZoneEventDTO {
     private String agentId;
     private String zoneId;
     private String operationAudit;
-    private LocalDateTime operationDate;
+    private String operationDate;
     private String operationBy;
 }
