@@ -1,5 +1,6 @@
 package anagrafica.service.placer.impl;
 
+import anagrafica.dto.company.CompanyResponse;
 import anagrafica.dto.event.PlacerZoneEventDTO;
 import anagrafica.dto.placer.PlacerRequest;
 import anagrafica.dto.placer.PlacerResponse;
@@ -10,7 +11,9 @@ import anagrafica.entity.audit.PlacerZoneAudit;
 import anagrafica.exception.RestException;
 import anagrafica.publisher.PlacerZonePublisher;
 import anagrafica.repository.audit.AuditPlacerZoneRepository;
+import anagrafica.repository.company.CompanyRepository;
 import anagrafica.repository.placer.PlaceRepository;
+import anagrafica.repository.placer.PlacerCompanyRepository;
 import anagrafica.repository.placer.PlacerZoneRepository;
 import anagrafica.repository.user.UserRepository;
 import anagrafica.repository.zone.ZoneRepository;
@@ -38,18 +41,22 @@ public class PlacerServiceImpl implements PlacerService {
     private final PlacerZoneRepository placerZoneRepository;
     private final AuditPlacerZoneRepository auditPlacerZoneRepository;
     private final ZoneRepository zoneRepository;
+    private final PlacerCompanyRepository placerCompanyRepository;
+    private final CompanyRepository companyRepository;
 
     private final PlacerMapper placerMapper;
     private final PlacerZonePublisher publisher;
 
     private final JwtUtil jwtUtil;
 
-    public PlacerServiceImpl(PlaceRepository placeRepository, UserRepository userRepository, PlacerZoneRepository placerZoneRepository, AuditPlacerZoneRepository auditPlacerZoneRepository, ZoneRepository zoneRepository, PlacerMapper placerMapper, PlacerZonePublisher publisher, JwtUtil jwtUtil) {
+    public PlacerServiceImpl(PlaceRepository placeRepository, UserRepository userRepository, PlacerZoneRepository placerZoneRepository, AuditPlacerZoneRepository auditPlacerZoneRepository, ZoneRepository zoneRepository, PlacerCompanyRepository placerCompanyRepository, CompanyRepository companyRepository, PlacerMapper placerMapper, PlacerZonePublisher publisher, JwtUtil jwtUtil) {
         this.placeRepository = placeRepository;
         this.userRepository = userRepository;
         this.placerZoneRepository = placerZoneRepository;
         this.auditPlacerZoneRepository = auditPlacerZoneRepository;
         this.zoneRepository = zoneRepository;
+        this.placerCompanyRepository = placerCompanyRepository;
+        this.companyRepository = companyRepository;
         this.placerMapper = placerMapper;
         this.publisher = publisher;
         this.jwtUtil = jwtUtil;
@@ -73,6 +80,19 @@ public class PlacerServiceImpl implements PlacerService {
         placer.setDeleted(Boolean.FALSE);
         placer.setUser(optionalUser.get());
         placer = placeRepository.save(placer);
+
+        if(!request.getCompanyIds().isEmpty()){
+            for(final Long companyId: request.getCompanyIds()){
+                final Optional<Company> optionalCompany = companyRepository.findById(companyId);
+                if(optionalCompany.isPresent()){
+                    final PlacerCompany placerCompany = new PlacerCompany();
+                    placerCompany.setCompany(optionalCompany.get());
+                    placerCompany.setPlacer(placer);
+                    placerCompanyRepository.save(placerCompany);
+                }
+            }
+        }
+
         return placerMapper.entityToResponse(placer);
     }
 
@@ -95,12 +115,38 @@ public class PlacerServiceImpl implements PlacerService {
             }
         }
 
+
         optionalPlacer.get().setName(request.getName());
         optionalPlacer.get().setSurname(request.getSurname());
         optionalPlacer.get().setIsActive(Boolean.TRUE);
         optionalPlacer.get().setDeleted(Boolean.FALSE);
         optionalPlacer.get().setUser(optionalUser.get());
         placeRepository.save(optionalPlacer.get());
+
+        if(!request.getCompanyIds().isEmpty()){
+            for(final Long companyId: request.getCompanyIds()){
+                final List<PlacerCompany> placerCompanies = placerCompanyRepository.existPlacerCompany(
+                        optionalPlacer.get().getId(),
+                        companyId
+                );
+                if(!placerCompanies.isEmpty()){
+                    for(final PlacerCompany placerCompany: placerCompanies){
+                        placerCompany.setUpdatedAt(LocalDateTime.now());
+                        placerCompany.setDeleted(Boolean.FALSE);
+                        placerCompanyRepository.save(placerCompany);
+                    }
+                }else{
+                    final Optional<Company> optionalCompany = companyRepository.findById(companyId);
+                    if(optionalCompany.isPresent()){
+                        final PlacerCompany placerCompany = new PlacerCompany();
+                        placerCompany.setCompany(optionalCompany.get());
+                        placerCompany.setPlacer(optionalPlacer.get());
+                        placerCompanyRepository.save(placerCompany);
+                    }
+                }
+            }
+        }
+
         return placerMapper.entityToResponse(optionalPlacer.get());
     }
 
@@ -111,7 +157,28 @@ public class PlacerServiceImpl implements PlacerService {
         final Page<Placer> placers = placeRepository.findAll(pageable);
         if(!placers.isEmpty()){
             placers.stream().forEach( placer -> {
-                responses.add(placerMapper.entityToResponse(placer));
+                final PlacerResponse placerResponse = placerMapper.entityToResponse(placer);
+                final List<PlacerCompany> placerCompanies = placerCompanyRepository.findPlacerCompanyFromPlacerId(placer.getId());
+
+                if(!placerCompanies.isEmpty()){
+                    final List<CompanyResponse> companyResponses = new ArrayList<>();
+                    for(final PlacerCompany placerCompany: placerCompanies){
+                        final CompanyResponse companyResponse = new CompanyResponse(
+                                placerCompany.getCompany().getId(),
+                                placerCompany.getCompany().getName(),
+                                placerCompany.getCompany().getPiva(),
+                                placerCompany.getCompany().getCode(),
+                                null,
+                                null,
+                                null,
+                                null
+                        );
+                        companyResponses.add(companyResponse);
+                    }
+                    placerResponse.setCompanies(companyResponses);
+                }
+
+                responses.add(placerResponse);
             });
         }
         return responses;
