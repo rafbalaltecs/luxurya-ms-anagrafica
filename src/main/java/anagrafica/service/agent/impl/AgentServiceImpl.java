@@ -14,14 +14,13 @@ import anagrafica.exception.RestException;
 import anagrafica.publisher.AgentZonePublisher;
 import anagrafica.repository.agent.AgentRepository;
 import anagrafica.repository.agent.AgentZoneRepository;
-import anagrafica.repository.agent.AuditAgentZoneRepository;
+import anagrafica.repository.audit.AuditAgentZoneRepository;
 import anagrafica.repository.user.UserRepository;
 import anagrafica.repository.zone.ZoneRepository;
 import anagrafica.service.agent.AgentService;
 import anagrafica.utils.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -276,7 +275,7 @@ public class AgentServiceImpl implements AgentService {
         audit.setOperationDate(LocalDateTime.now().toString());
         audit.setOperationAudit(OperationAuditEnum.ADD.name());
         audit.setZoneId(String.valueOf(agentZone.getZone().getId()));
-        audit.setZoneId(String.valueOf(agentZone.getAgent().getId()));
+        audit.setAgentId(String.valueOf(agentZone.getAgent().getId()));
         agentZonePublisher.publish(audit);
 
     }
@@ -316,7 +315,7 @@ public class AgentServiceImpl implements AgentService {
                 audit.setOperationDate(LocalDateTime.now().toString());
                 audit.setOperationAudit(OperationAuditEnum.REVOKE.name());
                 audit.setZoneId(String.valueOf(optionalAgentZoneExist.get().getZone().getId()));
-                audit.setZoneId(String.valueOf(optionalAgentZoneExist.get().getAgent().getId()));
+                audit.setAgentId(String.valueOf(optionalAgentZoneExist.get().getAgent().getId()));
                 agentZonePublisher.publish(audit);
             }else{
                 log.error("ATTENTION: Exist Another Associate For AgentZone , Agent: {} - Zone: {}", optionalAgent.get().getId(), optionalZone.get().getId());

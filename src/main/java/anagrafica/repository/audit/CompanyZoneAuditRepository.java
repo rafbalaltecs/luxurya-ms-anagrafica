@@ -1,4 +1,4 @@
-package anagrafica.repository.zone;
+package anagrafica.repository.audit;
 
 import anagrafica.entity.audit.CompanyZoneAudit;
 import org.springframework.data.mongodb.repository.MongoRepository;

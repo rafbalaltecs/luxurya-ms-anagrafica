@@ -1,4 +1,4 @@
-package anagrafica.repository.agent;
+package anagrafica.repository.audit;
 
 import anagrafica.entity.audit.AgentZoneAudit;
 import org.springframework.data.mongodb.repository.MongoRepository;

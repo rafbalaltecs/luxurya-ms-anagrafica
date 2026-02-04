@@ -1,4 +1,4 @@
-package anagrafica.repository.placer;
+package anagrafica.repository.audit;
 
 import anagrafica.entity.audit.PlacerZoneAudit;
 import org.springframework.data.mongodb.repository.MongoRepository;

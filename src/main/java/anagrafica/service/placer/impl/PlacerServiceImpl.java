@@ -1,24 +1,21 @@
 package anagrafica.service.placer.impl;
 
-import anagrafica.dto.event.AgentZoneEventDTO;
 import anagrafica.dto.event.PlacerZoneEventDTO;
 import anagrafica.dto.placer.PlacerRequest;
 import anagrafica.dto.placer.PlacerResponse;
 import anagrafica.dto.zone.ZoneResponse;
 import anagrafica.entity.*;
-import anagrafica.entity.audit.AgentZoneAudit;
 import anagrafica.entity.audit.OperationAuditEnum;
 import anagrafica.entity.audit.PlacerZoneAudit;
 import anagrafica.exception.RestException;
 import anagrafica.publisher.PlacerZonePublisher;
-import anagrafica.repository.placer.AuditPlacerZoneRepository;
+import anagrafica.repository.audit.AuditPlacerZoneRepository;
 import anagrafica.repository.placer.PlaceRepository;
 import anagrafica.repository.placer.PlacerZoneRepository;
 import anagrafica.repository.user.UserRepository;
 import anagrafica.repository.zone.ZoneRepository;
 import anagrafica.service.placer.PlacerMapper;
 import anagrafica.service.placer.PlacerService;
-import anagrafica.service.zone.ZoneService;
 import anagrafica.utils.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;

@@ -17,7 +17,7 @@ import anagrafica.publisher.AgentZonePublisher;
 import anagrafica.publisher.CompanyZonePublisher;
 import anagrafica.repository.agent.AgentZoneRepository;
 import anagrafica.repository.geography.CittaRepository;
-import anagrafica.repository.zone.CompanyZoneAuditRepository;
+import anagrafica.repository.audit.CompanyZoneAuditRepository;
 import anagrafica.repository.zone.ZoneCompanyRepository;
 import anagrafica.repository.zone.ZoneRepository;
 import anagrafica.service.zone.ZoneService;
