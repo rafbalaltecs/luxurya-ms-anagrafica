@@ -25,6 +25,7 @@ public class AuditableEntity {
         final LocalDateTime localDateTime = LocalDateTime.now();
         this.createdAt = localDateTime;
         this.updatedAt = localDateTime;
+        this.isDeleted = Boolean.FALSE;
     }
 
     @PreUpdate
