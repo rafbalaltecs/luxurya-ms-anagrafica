@@ -12,4 +12,5 @@ public class StartAnagraficaMS {
 	public static void main(String[] args) {
 	    SpringApplication.run(StartAnagraficaMS.class, args);
 	  }
+
 }

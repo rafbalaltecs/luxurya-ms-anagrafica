@@ -40,10 +40,17 @@ spring:
     redis:
       host: 16.16.192.42
       port: 6379
-      password: ""     # lascia vuoto se Redis non richiede autenticazione
-      timeout: 6000    # millisecondi
+      password: ""
+      timeout: 6000
       pool:
         enabled: true
+        min: 2              # connessioni minime sempre attive
+        max: 10             # connessioni massime
+        testOnBorrow: true  # testa la connessione prima dell'uso
+        testWhileIdle: true # testa le connessioni inattive
+        timeBetweenEvictionRuns: 30000  # controlla ogni 30 secondi
+        minEvictableIdleTime: 60000     # rimuovi connessioni idle dopo 60 secondi
+      keepAlive: true       # abilita TCP keepalive
 
   # --- LOGGING ---
   logging:

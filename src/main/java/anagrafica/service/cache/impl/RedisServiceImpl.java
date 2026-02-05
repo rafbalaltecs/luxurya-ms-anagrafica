@@ -2,7 +2,9 @@ package anagrafica.service.cache.impl;
 
 import anagrafica.service.cache.RedisService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
@@ -39,5 +41,19 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public boolean delete(String key) {
         return redisTemplate.delete(key);
+    }
+
+    @Scheduled(fixedRate = 300000) // ogni 5 minuti
+    public void keepAlive() {
+        try {
+            redisTemplate.execute((RedisCallback<Object>) connection -> {
+                connection.ping();
+                return null;
+            });
+            log.info("Connect Ping To Redis successful");
+        }catch (Exception e){
+            log.error("Error Connect Ping To Redis {}", e.getMessage());
+        }
+
     }
 }
