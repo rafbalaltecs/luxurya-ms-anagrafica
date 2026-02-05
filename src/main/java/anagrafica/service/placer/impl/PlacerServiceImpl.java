@@ -4,6 +4,7 @@ import anagrafica.dto.company.CompanyResponse;
 import anagrafica.dto.event.PlacerZoneEventDTO;
 import anagrafica.dto.placer.PlacerRequest;
 import anagrafica.dto.placer.PlacerResponse;
+import anagrafica.dto.user.UserResponse;
 import anagrafica.dto.zone.ZoneResponse;
 import anagrafica.entity.*;
 import anagrafica.entity.audit.OperationAuditEnum;
@@ -152,11 +153,16 @@ public class PlacerServiceImpl implements PlacerService {
     public List<PlacerResponse> findAll(Integer offset, Integer limit) {
         final List<PlacerResponse> responses = new ArrayList<>();
         final Pageable pageable = PageRequest.of(offset, limit);
-        final Page<Placer> placers = placeRepository.findAll(pageable);
+        final Page<Placer> placers = placeRepository.findAllNotDeleted(pageable);
         if(!placers.isEmpty()){
             placers.stream().forEach( placer -> {
                 final PlacerResponse placerResponse = placerMapper.entityToResponse(placer);
                 final List<PlacerCompany> placerCompanies = placerCompanyRepository.findPlacerCompanyFromPlacerId(placer.getId());
+
+                final UserResponse userResponse = new UserResponse();
+                userResponse.setId(placer.getUser().getId());
+                userResponse.setEmail(placer.getUser().getEmail());
+                placerResponse.setUser(userResponse);
 
                 if(!placerCompanies.isEmpty()){
                     final List<CompanyResponse> companyResponses = new ArrayList<>();

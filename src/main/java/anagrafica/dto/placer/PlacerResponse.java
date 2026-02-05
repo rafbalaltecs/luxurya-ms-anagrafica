@@ -1,6 +1,7 @@
 package anagrafica.dto.placer;
 
 import anagrafica.dto.company.CompanyResponse;
+import anagrafica.dto.user.UserResponse;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -13,4 +14,5 @@ public class PlacerResponse {
     private String surname;
     private String createdAt;
     private List<CompanyResponse> companies;
+    private UserResponse user;
 }
