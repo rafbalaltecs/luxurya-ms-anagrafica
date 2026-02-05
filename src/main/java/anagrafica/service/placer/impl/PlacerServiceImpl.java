@@ -69,10 +69,7 @@ public class PlacerServiceImpl implements PlacerService {
         if(optionalUser.isEmpty()){
             throw new RestException("User Not Found");
         }
-        final Optional<Placer> optionalPlacer = placeRepository.findPlacerWithUserId(request.getUserId());
-        if(optionalPlacer.isPresent()){
-            throw new RestException("User Not Found");
-        }
+
         Placer placer = new Placer();
         placer.setName(request.getName());
         placer.setSurname(request.getSurname());
@@ -108,10 +105,11 @@ public class PlacerServiceImpl implements PlacerService {
         if(optionalUser.isEmpty()){
             throw new RestException("User Not Found");
         }
+
         final Optional<Placer> optionalPlacerUser = placeRepository.findPlacerWithUserId(request.getUserId());
         if(optionalPlacerUser.isPresent()){
             if(!optionalPlacerUser.get().getId().equals(optionalPlacer.get().getId())){
-                throw new RestException("User Not Found");
+                throw new RestException("Placer Not Found");
             }
         }
 
