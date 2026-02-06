@@ -3,6 +3,7 @@ package anagrafica.service.agent.impl;
 import anagrafica.dto.agent.AgentRequest;
 import anagrafica.dto.agent.AgentResponse;
 import anagrafica.dto.event.AgentZoneEventDTO;
+import anagrafica.dto.user.UserResponse;
 import anagrafica.dto.zone.ZoneResponse;
 import anagrafica.entity.Agent;
 import anagrafica.entity.AgentZone;
@@ -18,6 +19,7 @@ import anagrafica.repository.audit.AuditAgentZoneRepository;
 import anagrafica.repository.user.UserRepository;
 import anagrafica.repository.zone.ZoneRepository;
 import anagrafica.service.agent.AgentService;
+import anagrafica.service.user.UserMapper;
 import anagrafica.utils.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +41,10 @@ public class AgentServiceImpl implements AgentService {
     private final UserRepository userRepository;
     private final AgentZonePublisher agentZonePublisher;
     private final JwtUtil jwtUtil;
+    private final UserMapper userMapper;
 
-    public AgentServiceImpl(AgentRepository agentRepository, ZoneRepository zoneRepository, AgentZoneRepository agentZoneRepository, AuditAgentZoneRepository auditAgentZoneRepository, UserRepository userRepository, AgentZonePublisher agentZonePublisher, JwtUtil jwtUtil) {
+    public AgentServiceImpl(AgentRepository agentRepository, ZoneRepository zoneRepository, AgentZoneRepository agentZoneRepository, AuditAgentZoneRepository auditAgentZoneRepository, UserRepository userRepository, AgentZonePublisher agentZonePublisher, JwtUtil jwtUtil,
+    		UserMapper userMapper) {
         this.agentRepository = agentRepository;
         this.zoneRepository = zoneRepository;
         this.agentZoneRepository = agentZoneRepository;
@@ -48,7 +52,9 @@ public class AgentServiceImpl implements AgentService {
         this.userRepository = userRepository;
         this.agentZonePublisher = agentZonePublisher;
         this.jwtUtil = jwtUtil;
+		this.userMapper = userMapper;
     }
+    
 
 
     @Override
@@ -67,13 +73,15 @@ public class AgentServiceImpl implements AgentService {
                 zoneResponse.setName(agentZone.getZone().getName());
                 zoneResponse.setCity(agentZone.getZone().getCitta().getNome());
             }
+            
             responses.add(
                     new AgentResponse(
                             agent.getId(),
                             agent.getName(),
                             agent.getSurname(),
                             agent.getTelephone(),
-                            zoneResponse
+                            zoneResponse,
+                            userMapper.entityToResponse(agent.getUser())
                     )
             );
         }
@@ -121,7 +129,8 @@ public class AgentServiceImpl implements AgentService {
                 request.getName(),
                 request.getSurname(),
                 request.getTelephone(),
-                zoneResponse
+                zoneResponse,
+                userMapper.entityToResponse(agent.getUser())
                 );
     }
 
@@ -170,7 +179,8 @@ public class AgentServiceImpl implements AgentService {
                 request.getName(),
                 request.getSurname(),
                 request.getTelephone(),
-                zoneResponse
+                zoneResponse,
+                userMapper.entityToResponse(optionalAgent.get().getUser())
         );
     }
 

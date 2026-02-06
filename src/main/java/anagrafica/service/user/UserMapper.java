@@ -3,6 +3,7 @@ package anagrafica.service.user;
 import anagrafica.dto.user.TypeUserRequest;
 import anagrafica.dto.user.TypeUserResponse;
 import anagrafica.dto.user.UserRequest;
+import anagrafica.dto.user.UserResponse;
 import anagrafica.entity.TypeUser;
 import anagrafica.entity.User;
 import anagrafica.exception.RestException;
@@ -22,6 +23,16 @@ public class UserMapper {
             return user;
         }
         return null;
+    }
+    
+    public UserResponse entityToResponse(final User user) {
+    	if(user != null) {
+    		final UserResponse userResponse = new UserResponse();
+    		userResponse.setEmail(user.getEmail());
+    		userResponse.setId(user.getId());
+    		return userResponse;
+    	}
+    	return null;
     }
 
     public TypeUser requestToEntityTypeUser(final TypeUserRequest request){
