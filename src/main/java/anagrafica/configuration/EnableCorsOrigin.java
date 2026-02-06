@@ -10,13 +10,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class EnableCorsOrigin implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-    	registry.addMapping("/**")
-	        .allowedOriginPatterns("*")  // <-- AGGIUNGI QUESTO
-	        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-	        .allowedHeaders("*")  // <-- AGGIUNGI QUESTO
-	        .exposedHeaders("Authorization")  // <-- AGGIUNGI QUESTO
-	        .allowCredentials(true)  // <-- AGGIUNGI QUESTO
-	        .maxAge(3600);  // <-- AGGIUNGI QUESTO (cache preflight per 1 ora)
+        registry.addMapping("/**")
+                .allowedOriginPatterns("*")  // Allows all origins
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
     }
 
 
