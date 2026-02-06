@@ -369,7 +369,8 @@ public class CompanyServiceImpl implements CompanyService {
                                         agentZone.getAgent().getName(),
                                         agentZone.getAgent().getSurname(),
                                         null,
-                                        zoneResponse
+                                        zoneResponse,
+                                        null
                                 )
                         );
                     }

@@ -227,7 +227,8 @@ public class ZoneServiceImpl implements ZoneService {
                             agentZone.getAgent().getName(),
                             agentZone.getAgent().getSurname(),
                             null,
-                            zoneResponse
+                            zoneResponse,
+                            null
                     )
             );
         }
