@@ -110,7 +110,7 @@ public class PlacerServiceImpl implements PlacerService {
         final Optional<Placer> optionalPlacerUser = placeRepository.findPlacerWithUserId(request.getUserId());
         if(optionalPlacerUser.isPresent()){
             if(!optionalPlacerUser.get().getId().equals(optionalPlacer.get().getId())){
-                throw new RestException("Placer Not Found");
+                throw new RestException("Attenzione - Questo Piazzatore ha un utente associato diverso, collegato ad utente con ID: " + optionalPlacerUser.get().getUser().getId());
             }
         }
 
@@ -172,6 +172,9 @@ public class PlacerServiceImpl implements PlacerService {
                                 placerCompany.getCompany().getName(),
                                 placerCompany.getCompany().getPiva(),
                                 placerCompany.getCompany().getCode(),
+                                null,
+                                null,
+                                null,
                                 null,
                                 null,
                                 null,

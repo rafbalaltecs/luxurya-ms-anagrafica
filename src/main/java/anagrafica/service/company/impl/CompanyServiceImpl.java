@@ -16,6 +16,8 @@ import anagrafica.repository.company.CompanyRepository;
 import anagrafica.repository.geography.CittaRepository;
 import anagrafica.repository.zone.ZoneCompanyRepository;
 import anagrafica.repository.zone.ZoneRepository;
+import anagrafica.service.address.AddressMapper;
+import anagrafica.service.agent.AgentMapper;
 import anagrafica.service.company.CompanyService;
 import anagrafica.utils.JwtUtil;
 import anagrafica.utils.MethodUtils;
@@ -44,9 +46,11 @@ public class CompanyServiceImpl implements CompanyService {
     private final AgentRepository agentRepository;
     private final AddressRepository addressRepository;
     private final CompanyAddressRepository companyAddressRepository;
+    private final AddressMapper addressMapper;
+    private final AgentMapper agentMapper;
     private final JwtUtil jwtUtil;
 
-    public CompanyServiceImpl(CompanyRepository companyRepository, CompanyExecusClient client, CittaRepository cittaRepository, ZoneCompanyRepository zoneCompanyRepository, AgentZoneRepository agentZoneRepository, ZoneRepository zoneRepository, AgentRepository agentRepository, AddressRepository addressRepository, CompanyAddressRepository companyAddressRepository, JwtUtil jwtUtil) {
+    public CompanyServiceImpl(CompanyRepository companyRepository, CompanyExecusClient client, CittaRepository cittaRepository, ZoneCompanyRepository zoneCompanyRepository, AgentZoneRepository agentZoneRepository, ZoneRepository zoneRepository, AgentRepository agentRepository, AddressRepository addressRepository, CompanyAddressRepository companyAddressRepository, AddressMapper addressMapper, AgentMapper agentMapper, JwtUtil jwtUtil) {
         this.companyRepository = companyRepository;
         this.client = client;
         this.cittaRepository = cittaRepository;
@@ -56,6 +60,8 @@ public class CompanyServiceImpl implements CompanyService {
         this.agentRepository = agentRepository;
         this.addressRepository = addressRepository;
         this.companyAddressRepository = companyAddressRepository;
+        this.addressMapper = addressMapper;
+        this.agentMapper = agentMapper;
         this.jwtUtil = jwtUtil;
     }
 
@@ -159,7 +165,10 @@ public class CompanyServiceImpl implements CompanyService {
                 company.getDescription(),
                 optionalZone.get().getName(),
                 address.getAddress(),
-                request.getTelephone()
+                request.getTelephone(),
+                company.getPiva(),
+                addressMapper.toResponse(address),
+                agentMapper.toResponseLight(optionalAgent.get())
         );
     }
 
@@ -285,7 +294,10 @@ public class CompanyServiceImpl implements CompanyService {
                 optionalCompany.get().getDescription(),
                 optionalZone.get().getName(),
                 address.getAddress(),
-                request.getTelephone()
+                request.getTelephone(),
+                optionalCompany.get().getPiva(),
+                addressMapper.toResponse(address),
+                agentMapper.toResponseLight(optionalAgent.get())
         );
     }
 
@@ -311,6 +323,7 @@ public class CompanyServiceImpl implements CompanyService {
 
             CompanyAddress companyAddress = null;
             ZoneCompany zoneCompany = null;
+            AgentZone agentZone = null;
 
             final List<CompanyAddress> companyAddressList = companyAddressRepository.findAllCompanyAddressFromCompanyId(company.getId());
 
@@ -322,7 +335,16 @@ public class CompanyServiceImpl implements CompanyService {
 
             if(!zoneCompanyList.isEmpty()){
                 zoneCompany = zoneCompanyList.get(0);
+
+                final List<AgentZone> findAllAgentZone = agentZoneRepository.findAllZoneWithIdZoneAndAgents(zoneCompany.getZone().getId());
+
+                if(!findAllAgentZone.isEmpty()){
+                    agentZone = findAllAgentZone.get(0);
+                }
             }
+
+
+
 
             responses.add(
                     new CompanyResponse(
@@ -333,7 +355,10 @@ public class CompanyServiceImpl implements CompanyService {
                             company.getDescription(),
                             zoneCompany != null ? zoneCompany.getZone().getName() : null,
                             companyAddress != null ? companyAddress.getAddress().getAddress() : null,
-                            company.getTelephone()
+                            company.getTelephone(),
+                            company.getPiva(),
+                            addressMapper.toResponse(companyAddress != null ? companyAddress.getAddress() : null),
+                            agentMapper.toResponseLight(agentZone != null ? agentZone.getAgent() : null)
                     )
             );
 

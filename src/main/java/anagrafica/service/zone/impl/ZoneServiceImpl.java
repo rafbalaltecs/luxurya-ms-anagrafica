@@ -201,6 +201,9 @@ public class ZoneServiceImpl implements ZoneService {
                             zoneCompany.getCompany().getDescription(),
                             null,
                             null,
+                            null,
+                            null,
+                            null,
                             null
                     )
             );

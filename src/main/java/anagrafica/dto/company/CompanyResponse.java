@@ -1,5 +1,7 @@
 package anagrafica.dto.company;
 
+import anagrafica.dto.address.AddressResponse;
+import anagrafica.dto.agent.AgentResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -14,4 +16,8 @@ public class CompanyResponse {
     private String zona;
     private String address;
     private String telephone;
+    //Another fields
+    private String cf;
+    private AddressResponse addressResponse;
+    private AgentResponse agent;
 }
