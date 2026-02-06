@@ -56,4 +56,11 @@ public class UserServiceImpl implements UserService {
             userRepository.save(optionalUser.get());
         }
     }
+
+	@Override
+	@Transactional
+	public UserResponse create(UserRequest request) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

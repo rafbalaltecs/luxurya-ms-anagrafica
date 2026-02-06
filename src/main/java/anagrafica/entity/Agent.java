@@ -24,4 +24,6 @@ public class Agent extends AuditableEntityExt{
     @ManyToOne
     @JoinColumn(name = "UserId")
     private User user;
+    @Column(name = "Telephone")
+    private String telephone;
 }

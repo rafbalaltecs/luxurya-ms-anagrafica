@@ -72,7 +72,7 @@ public class AgentServiceImpl implements AgentService {
                             agent.getId(),
                             agent.getName(),
                             agent.getSurname(),
-                            null,
+                            agent.getTelephone(),
                             zoneResponse
                     )
             );
@@ -105,6 +105,7 @@ public class AgentServiceImpl implements AgentService {
         agent.setSurname(request.getSurname());
         agent.setUser(optionalUser.get());
         agent.setCreatedBy(jwtUtil.getIdProfileLogged().toString());
+        agent.setTelephone(request.getTelephone());
 
         agent = agentRepository.save(agent);
 
@@ -154,6 +155,7 @@ public class AgentServiceImpl implements AgentService {
         optionalAgent.get().setName(request.getName());
         optionalAgent.get().setSurname(request.getSurname());
         optionalAgent.get().setUpdatedBy(jwtUtil.getIdProfileLogged().toString());
+        optionalAgent.get().setTelephone(request.getTelephone());
         agentRepository.save(optionalAgent.get());
 
         addZoneToAgent(optionalAgent.get().getId(), optionalZone.get().getId());
@@ -267,7 +269,7 @@ public class AgentServiceImpl implements AgentService {
         agentZone.setZone(optionalZone.get());
         agentZone.setAgent(optionalAgent.get());
         agentZone.setIsActive(Boolean.TRUE);
-
+        agentZone.setDeleted(Boolean.FALSE);
         agentZoneRepository.save(agentZone);
 
         final AgentZoneEventDTO audit = new AgentZoneEventDTO();
