@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
-public class JwtFilter implements Filter {
+    public class JwtFilter implements Filter {
 
 	private final JwtUtil jwtUtil;
     private final RouteAuthorizationService routeAuthorizationService;
@@ -40,6 +40,18 @@ public class JwtFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) response;
 
         String path = req.getRequestURI();
+
+        // Aggiungi gli header CORS
+        resp.setHeader("Access-Control-Allow-Origin", "*");
+        resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        resp.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept");
+        resp.setHeader("Access-Control-Max-Age", "3600");
+
+        // Se è una richiesta OPTIONS (preflight), rispondi subito senza validare il JWT
+        if ("OPTIONS".equalsIgnoreCase(req.getMethod())) {
+            resp.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
 
         if (path.startsWith("/api/auth") || path.startsWith("/actuator") || path.startsWith("/api/login")) {
             chain.doFilter(request, response);
