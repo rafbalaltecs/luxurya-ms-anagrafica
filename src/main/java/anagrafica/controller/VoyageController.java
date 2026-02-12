@@ -35,7 +35,7 @@ public class VoyageController {
 		return ResponseEntity.ok(voyageService.findAll(offset, limit));
 	}
 	
-	@GetMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+	@GetMapping(value = "/{id}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public ResponseEntity<VoyageResponse> findById(@PathVariable("id") Long id){
 		return ResponseEntity.ok(voyageService.findById(id));
 	}
