@@ -15,4 +15,5 @@ public interface ZoneCompanyRepository extends JpaRepository<ZoneCompany, Long> 
 
     @Query("SELECT c FROM ZoneCompany c WHERE c.company.id = :companyId AND c.isDeleted = false")
     List<ZoneCompany> findZoneFromCompany(@Param("companyId") Long companyId);
+    
 }

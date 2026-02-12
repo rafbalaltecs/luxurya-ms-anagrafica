@@ -1,26 +1,39 @@
 package anagrafica.controller;
 
-import anagrafica.dto.agent.AgentRequest;
-import anagrafica.dto.agent.AgentResponse;
-import anagrafica.dto.zone.ZoneResponse;
-import anagrafica.service.agent.AgentService;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+
 import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import anagrafica.dto.agent.AgentRequest;
+import anagrafica.dto.agent.AgentResponse;
+import anagrafica.dto.voyage.VoyageResponse;
+import anagrafica.dto.zone.ZoneResponse;
+import anagrafica.service.agent.AgentService;
+import anagrafica.service.voyage.VoyageService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/agent")
 @Tag(name = "Gestione Agenti")
 @Slf4j
 public class AgentController {
+	
     private final AgentService agentService;
+    private final VoyageService voyageService;
 
-    public AgentController(AgentService agentService) {
+    public AgentController(AgentService agentService, VoyageService voyageService) {
         this.agentService = agentService;
+        this.voyageService = voyageService;
     }
 
     @GetMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -65,6 +78,11 @@ public class AgentController {
     @DeleteMapping(value = "/{id}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public void delete(@PathVariable("id") Long id){
         agentService.delete(id);
+    }
+    
+    @GetMapping(value = "/{id}/voyages", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<List<VoyageResponse>> findAllVoyages(@PathVariable("id") Long id){
+        return ResponseEntity.ok(voyageService.findByAgentId(id));
     }
 
 }
