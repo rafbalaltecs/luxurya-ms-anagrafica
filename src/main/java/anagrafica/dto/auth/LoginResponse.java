@@ -11,4 +11,8 @@ public class LoginResponse {
     private UserResponse user;
     private LocalDateTime generatedDate;
     private LocalDateTime expireDate;
+    private Long idAgent;
+    private Boolean isAgent;
+    private String name;
+    private String surname;
 }

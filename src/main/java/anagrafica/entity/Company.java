@@ -30,4 +30,6 @@ public class Company extends AuditableEntityExt {
     private Citta citta;
     @Column(name = "Telephone")
     private String telephone;
+    @Column(name = "CodeLegacy")
+    private String codeLegacy;
 }

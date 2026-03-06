@@ -13,8 +13,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import anagrafica.dto.agent.AgentConfigurationVoyageResponse;
+import anagrafica.dto.agent.AgentCurrentVoyageResponse;
+import anagrafica.dto.agent.AgentProductResponse;
 import anagrafica.dto.agent.AgentRequest;
 import anagrafica.dto.agent.AgentResponse;
+import anagrafica.dto.ext.ProductResponse;
+import anagrafica.dto.voyage.VoyageCustomerStatusAgentResponse;
 import anagrafica.dto.voyage.VoyageResponse;
 import anagrafica.dto.zone.ZoneResponse;
 import anagrafica.service.agent.AgentService;
@@ -45,6 +50,16 @@ public class AgentController {
     public ResponseEntity<List<ZoneResponse>> findAllZones(@PathVariable("id") Long id){
         return ResponseEntity.ok(agentService.findZonesFromAgent(id));
     }
+    
+    @GetMapping(value = "/{id}/products", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<List<AgentProductResponse>> findAllProducts(@PathVariable("id") Long id){
+        return ResponseEntity.ok(agentService.findAllProductsFromAgentId(id));
+    }
+    
+    @GetMapping(value = "/{id}/configuration-voyages", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<List<AgentConfigurationVoyageResponse>> findAllConfVoyages(@PathVariable("id") Long id){
+        return ResponseEntity.ok(agentService.listAgentConfigurationVoyage(id));
+    }
 
     @PutMapping(value = "/{id}/zone/{zoneId}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public void addZoneToAgent(
@@ -66,6 +81,22 @@ public class AgentController {
     @PostMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<AgentResponse> save(@RequestBody final AgentRequest request){
         return ResponseEntity.ok(agentService.create(request));
+    }
+    
+    @PostMapping(value = "/{id}/current-voyage", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<AgentCurrentVoyageResponse> currentBoyage(@PathVariable("id") Long agentId){
+        return ResponseEntity.ok(agentService.currentVoyage(agentId));
+    }
+    
+    @GetMapping(value = "/{id}/current-voyage-customer-zone/{zoneId}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<VoyageCustomerStatusAgentResponse> currentVoyageCustomer(@PathVariable("id") Long agentId,
+    		 @PathVariable("zoneId") Long zoneId){
+        return ResponseEntity.ok(agentService.currentVoyageCustomer(agentId, zoneId));
+    }
+    
+    @PostMapping(value = "/{id}/close-current-voyage", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void closeCurrentBoyage(@PathVariable("id") Long agentId){
+       agentService.closeCurrentVoyage(agentId);
     }
 
     @PutMapping(value = "/{id}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)

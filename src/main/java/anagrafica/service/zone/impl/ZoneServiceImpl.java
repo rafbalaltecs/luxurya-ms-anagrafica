@@ -1,5 +1,12 @@
 package anagrafica.service.zone.impl;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+
 import anagrafica.dto.agent.AgentResponse;
 import anagrafica.dto.company.CompanyResponse;
 import anagrafica.dto.event.AgentZoneEventDTO;
@@ -16,20 +23,14 @@ import anagrafica.exception.RestException;
 import anagrafica.publisher.AgentZonePublisher;
 import anagrafica.publisher.CompanyZonePublisher;
 import anagrafica.repository.agent.AgentZoneRepository;
-import anagrafica.repository.geography.CittaRepository;
 import anagrafica.repository.audit.CompanyZoneAuditRepository;
+import anagrafica.repository.geography.CittaRepository;
 import anagrafica.repository.zone.ZoneCompanyRepository;
 import anagrafica.repository.zone.ZoneRepository;
 import anagrafica.service.zone.ZoneService;
 import anagrafica.utils.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @Slf4j
@@ -77,7 +78,7 @@ public class ZoneServiceImpl implements ZoneService {
 
         zone = zoneRepository.save(zone);
 
-        return new ZoneResponse(zone.getId(), zone.getName(), zone.getCitta().getNome());
+        return new ZoneResponse(zone.getId(), zone.getName(), zone.getCitta() != null ? zone.getCitta().getNome() : null);
     }
 
     @Override
@@ -125,7 +126,7 @@ public class ZoneServiceImpl implements ZoneService {
                     new ZoneResponse(
                             zone.getId(),
                             zone.getName(),
-                            zone.getCitta().getNome()
+                            zone.getCitta() != null ? zone.getCitta().getNome() : null
                     )
             );
         }
@@ -231,6 +232,7 @@ public class ZoneServiceImpl implements ZoneService {
                             agentZone.getAgent().getSurname(),
                             null,
                             zoneResponse,
+                            null,
                             null
                     )
             );
@@ -254,4 +256,41 @@ public class ZoneServiceImpl implements ZoneService {
         audit.setUserOperationId(Long.valueOf(companyZoneEventDTO.getOperationBy()));
         companyZoneAuditRepository.save(audit);
     }
+
+	@Override
+	public ZoneResponse findByName(String name) {
+		final Optional<Zone> optionalZone = zoneRepository.existWithName(name);
+		if(optionalZone.isEmpty()) {
+			return null;
+		}
+		 final ZoneResponse zoneResponse = new ZoneResponse();
+         zoneResponse.setId(optionalZone.get().getId());
+         zoneResponse.setName(optionalZone.get().getName());
+         zoneResponse.setCity(optionalZone.get().getCitta() != null ? optionalZone.get().getCitta().getNome() : null);
+        return zoneResponse;
+	}
+
+	@Override
+	@Transactional
+	public ZoneResponse createForImport(ZoneRequest request) {
+		
+		if(request.getCityId() != null) {
+			final Optional<Citta> optionalCitta = cittaRepository.findById(request.getCityId());
+	        if(optionalCitta.isEmpty()){
+	        }
+		}
+		
+        final Optional<Zone> existOptionalZone = zoneRepository.existWithName(request.getName());
+
+        if(existOptionalZone.isPresent()){
+        	return new ZoneResponse(existOptionalZone.get().getId(), existOptionalZone.get().getName(),null);
+        }
+
+        Zone zone = new Zone();
+        zone.setName(request.getName());
+
+        zone = zoneRepository.save(zone);
+
+        return new ZoneResponse(zone.getId(), zone.getName(), null);
+	}
 }

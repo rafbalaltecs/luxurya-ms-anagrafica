@@ -10,7 +10,7 @@ import java.util.List;
 
 @Repository
 public interface CompanyAddressRepository extends JpaRepository<CompanyAddress, Long> {
-    @Query("SELECT a FROM CompanyAddress a WHERE a.company.id = :id AND a.isDeleted = false")
+    @Query("SELECT a FROM CompanyAddress a WHERE a.company.id = :id AND a.isDeleted = false AND a.company.isDeleted = false")
     public List<CompanyAddress> findAllCompanyAddressFromCompanyId(@Param("id") final Long id);
 
 }

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import anagrafica.exception.BusinessException;
 import anagrafica.exception.RestException;
 import anagrafica.exception.RestResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,19 @@ public class GlobalExceptionHandler {
         body.put("timestamp", LocalDateTime.now().toString());
         body.put("error", ex.getMessage());
         body.put("tid", tid);
+        log.error("error: " + ex.getMessage() + "\n tid:" + tid + " \n httpStatus: " + HttpStatus.BAD_REQUEST.toString());
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+	
+	@ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Object> handleBusinessException(BusinessException ex) {
+		final String tid = UUID.randomUUID().toString();
+		Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("error", ex.getMessage());
+        body.put("tid", tid);
+        body.put("code", ex.getCode());
+        body.put("description", ex.getDescription());
         log.error("error: " + ex.getMessage() + "\n tid:" + tid + " \n httpStatus: " + HttpStatus.BAD_REQUEST.toString());
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }

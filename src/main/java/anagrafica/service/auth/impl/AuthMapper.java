@@ -26,6 +26,7 @@ public class AuthMapper {
         if(user != null){
             final UserResponse userResponse = new UserResponse();
             userResponse.setEmail(user.getEmail());
+            userResponse.setId(user.getId());
             final List<PermissionUser> permissionUsers = permissionService.findPermissionUserFromUser(user);
             if(!permissionUsers.isEmpty()){
                 final Set<String> typeUsers = new HashSet<>();

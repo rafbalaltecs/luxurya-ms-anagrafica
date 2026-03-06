@@ -14,4 +14,5 @@ public class AgentResponse {
     private String telephone;
     private ZoneResponse zona;
     private UserResponse user;
+    private Integer totalClients;
 }

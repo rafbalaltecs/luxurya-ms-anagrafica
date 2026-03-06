@@ -1,7 +1,9 @@
 package anagrafica.controller;
 
 
+import anagrafica.client.response.geo.GeocodingResult;
 import anagrafica.dto.agent.AgentResponse;
+import anagrafica.dto.company.CompanyInfoResponse;
 import anagrafica.dto.company.CompanyRequest;
 import anagrafica.dto.company.CompanyResponse;
 import anagrafica.service.company.CompanyService;
@@ -35,6 +37,25 @@ public class CompanyController {
             @PathVariable("id") Long id
     ){
         return ResponseEntity.ok(companyService.findAllAgentsFromCompanyId(id));
+    }
+    
+    @GetMapping(value = "/{id}/stock-movement", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<CompanyInfoResponse> findAllStockFromCompanyId(
+            @PathVariable("id") Long id
+    ){
+        return ResponseEntity.ok(companyService.findAllStockFromCompany(id));
+    }
+    
+    @GetMapping(value = "/{id}/geo", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<GeocodingResult> latlnt(
+            @PathVariable("id") Long id
+    ){
+        return ResponseEntity.ok(companyService.findGeofromcompanyId(id));
+    }
+    
+    @PostMapping(value = "/sync-geo", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void syncGeo(){
+      companyService.syncGeoCompany();
     }
 
     @PostMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)

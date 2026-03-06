@@ -1,34 +1,65 @@
 package anagrafica.service.agent.impl;
 
-import anagrafica.dto.agent.AgentRequest;
-import anagrafica.dto.agent.AgentResponse;
-import anagrafica.dto.event.AgentZoneEventDTO;
-import anagrafica.dto.user.UserResponse;
-import anagrafica.dto.zone.ZoneResponse;
-import anagrafica.entity.Agent;
-import anagrafica.entity.AgentZone;
-import anagrafica.entity.User;
-import anagrafica.entity.Zone;
-import anagrafica.entity.audit.AgentZoneAudit;
-import anagrafica.entity.audit.OperationAuditEnum;
-import anagrafica.exception.RestException;
-import anagrafica.publisher.AgentZonePublisher;
-import anagrafica.repository.agent.AgentRepository;
-import anagrafica.repository.agent.AgentZoneRepository;
-import anagrafica.repository.audit.AuditAgentZoneRepository;
-import anagrafica.repository.user.UserRepository;
-import anagrafica.repository.zone.ZoneRepository;
-import anagrafica.service.agent.AgentService;
-import anagrafica.service.user.UserMapper;
-import anagrafica.utils.JwtUtil;
-import jakarta.transaction.Transactional;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+
+import anagrafica.client.ProductClient;
+import anagrafica.dto.agent.AgentConfigurationVoyageResponse;
+import anagrafica.dto.agent.AgentCurrentVoyageResponse;
+import anagrafica.dto.agent.AgentProductResponse;
+import anagrafica.dto.agent.AgentRequest;
+import anagrafica.dto.agent.AgentResponse;
+import anagrafica.dto.company.CompanyStockResponse;
+import anagrafica.dto.event.AgentZoneEventDTO;
+import anagrafica.dto.ext.ProductResponse;
+import anagrafica.dto.voyage.VoyageClientResponse;
+import anagrafica.dto.voyage.VoyageCustomerStatusAgentResponse;
+import anagrafica.dto.voyage.VoyageOperationResponse;
+import anagrafica.dto.zone.ZoneResponse;
+import anagrafica.entity.Agent;
+import anagrafica.entity.AgentCurrentVoyage;
+import anagrafica.entity.AgentZone;
+import anagrafica.entity.Company;
+import anagrafica.entity.CompanyAddress;
+import anagrafica.entity.CompanyStock;
+import anagrafica.entity.ConfigurationVoyage;
+import anagrafica.entity.ConfigurationVoyageZone;
+import anagrafica.entity.User;
+import anagrafica.entity.Voyage;
+import anagrafica.entity.VoyageCompany;
+import anagrafica.entity.VoyageCompanyOperation;
+import anagrafica.entity.Zone;
+import anagrafica.entity.ZoneCompany;
+import anagrafica.entity.audit.AgentZoneAudit;
+import anagrafica.entity.audit.OperationAuditEnum;
+import anagrafica.exception.RestException;
+import anagrafica.publisher.AgentZonePublisher;
+import anagrafica.repository.agent.AgentCurrentVoyageRepository;
+import anagrafica.repository.agent.AgentRepository;
+import anagrafica.repository.agent.AgentZoneRepository;
+import anagrafica.repository.audit.AuditAgentZoneRepository;
+import anagrafica.repository.company.CompanyAddressRepository;
+import anagrafica.repository.company.CompanyStockRepository;
+import anagrafica.repository.user.UserRepository;
+import anagrafica.repository.voyage.ConfigurationVoyageRepository;
+import anagrafica.repository.voyage.ConfigurationVoyageZoneRepository;
+import anagrafica.repository.voyage.VoyageCompanyOperationRepository;
+import anagrafica.repository.voyage.VoyageCompanyRepository;
+import anagrafica.repository.voyage.VoyageRepository;
+import anagrafica.repository.zone.ZoneCompanyRepository;
+import anagrafica.repository.zone.ZoneRepository;
+import anagrafica.service.agent.AgentService;
+import anagrafica.service.user.UserMapper;
+import anagrafica.service.voyage.impl.ConfigurationVoyageMapper;
+import anagrafica.utils.JwtUtil;
+import anagrafica.utils.MethodUtils;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -42,18 +73,53 @@ public class AgentServiceImpl implements AgentService {
     private final AgentZonePublisher agentZonePublisher;
     private final JwtUtil jwtUtil;
     private final UserMapper userMapper;
+    private final ZoneCompanyRepository zoneCompanyRepository;
+    private final ConfigurationVoyageZoneRepository configurationVoyageZoneRepository;
+    private final ConfigurationVoyageRepository configurationVoyageRepository;
+    private final ConfigurationVoyageMapper configurationVoyageMapper;
+    private final VoyageCompanyRepository voyageCompanyRepository;
+    private final VoyageCompanyOperationRepository voyageCompanyOperationRepository;
+    private final AgentCurrentVoyageRepository agentCurrentVoyageRepository;
+    private final VoyageRepository voyageRepository;
+    private final ProductClient productClient;
+    private final CompanyAddressRepository companyAddressRepository;
+    private final CompanyStockRepository companyStockRepository;
+   
 
-    public AgentServiceImpl(AgentRepository agentRepository, ZoneRepository zoneRepository, AgentZoneRepository agentZoneRepository, AuditAgentZoneRepository auditAgentZoneRepository, UserRepository userRepository, AgentZonePublisher agentZonePublisher, JwtUtil jwtUtil,
-    		UserMapper userMapper) {
-        this.agentRepository = agentRepository;
-        this.zoneRepository = zoneRepository;
-        this.agentZoneRepository = agentZoneRepository;
-        this.auditAgentZoneRepository = auditAgentZoneRepository;
-        this.userRepository = userRepository;
-        this.agentZonePublisher = agentZonePublisher;
-        this.jwtUtil = jwtUtil;
+	public AgentServiceImpl(AgentRepository agentRepository, ZoneRepository zoneRepository,
+			AgentZoneRepository agentZoneRepository, AuditAgentZoneRepository auditAgentZoneRepository,
+			UserRepository userRepository, AgentZonePublisher agentZonePublisher, JwtUtil jwtUtil,
+			UserMapper userMapper, ZoneCompanyRepository zoneCompanyRepository,
+			ConfigurationVoyageZoneRepository configurationVoyageZoneRepository,
+			ConfigurationVoyageRepository configurationVoyageRepository,
+			ConfigurationVoyageMapper configurationVoyageMapper,
+			VoyageCompanyRepository voyageCompanyRepository,
+			VoyageCompanyOperationRepository voyageCompanyOperationRepository,
+			AgentCurrentVoyageRepository agentCurrentVoyageRepository,
+			VoyageRepository voyageRepository,
+			ProductClient productClient,
+			CompanyAddressRepository companyAddressRepository,
+			CompanyStockRepository companyStockRepository) {
+		this.agentRepository = agentRepository;
+		this.zoneRepository = zoneRepository;
+		this.agentZoneRepository = agentZoneRepository;
+		this.auditAgentZoneRepository = auditAgentZoneRepository;
+		this.userRepository = userRepository;
+		this.agentZonePublisher = agentZonePublisher;
+		this.jwtUtil = jwtUtil;
 		this.userMapper = userMapper;
-    }
+		this.zoneCompanyRepository = zoneCompanyRepository;
+		this.configurationVoyageRepository = configurationVoyageRepository;
+		this.configurationVoyageZoneRepository = configurationVoyageZoneRepository;
+		this.configurationVoyageMapper = configurationVoyageMapper;
+		this.voyageCompanyRepository = voyageCompanyRepository;
+		this.voyageCompanyOperationRepository = voyageCompanyOperationRepository;
+		this.agentCurrentVoyageRepository = agentCurrentVoyageRepository;
+		this.voyageRepository = voyageRepository;
+		this.productClient = productClient;
+		this.companyAddressRepository = companyAddressRepository;
+		this.companyStockRepository = companyStockRepository;
+	}
     
 
 
@@ -62,16 +128,23 @@ public class AgentServiceImpl implements AgentService {
         final List<AgentResponse> responses = new ArrayList<>();
         final List<Agent> list = agentRepository.findAll();
         for(final Agent agent: list){
-
+        	Integer totalCompany = 0;
             final List<AgentZone> agentZones = agentZoneRepository.findAllZonesFromAgentId(agent.getId());
 
             ZoneResponse zoneResponse = null;
             if(!agentZones.isEmpty()){
                 zoneResponse = new ZoneResponse();
                 final AgentZone agentZone = agentZones.get(0);
-                zoneResponse.setId(agentZone.getZone().getId());
-                zoneResponse.setName(agentZone.getZone().getName());
-                zoneResponse.setCity(agentZone.getZone().getCitta().getNome());
+                if(agentZone.getZone() != null) {
+                	zoneResponse.setId(agentZone.getZone().getId());
+                    zoneResponse.setName(agentZone.getZone() != null ? agentZone.getZone().getName() : null);
+                    zoneResponse.setCity(agentZone.getZone().getCitta() != null ? agentZone.getZone().getCitta().getNome() : null);
+                    
+                    final List<ZoneCompany> listZoneCompany = zoneCompanyRepository.findAllCompanyFromZone(agentZone.getZone().getId());
+                    totalCompany = listZoneCompany.size();
+                }
+                
+                
             }
             
             responses.add(
@@ -81,7 +154,8 @@ public class AgentServiceImpl implements AgentService {
                             agent.getSurname(),
                             agent.getTelephone(),
                             zoneResponse,
-                            userMapper.entityToResponse(agent.getUser())
+                            userMapper.entityToResponse(agent.getUser()),
+                            totalCompany
                     )
             );
         }
@@ -130,7 +204,8 @@ public class AgentServiceImpl implements AgentService {
                 request.getSurname(),
                 request.getTelephone(),
                 zoneResponse,
-                userMapper.entityToResponse(agent.getUser())
+                userMapper.entityToResponse(agent.getUser()),
+                null
                 );
     }
 
@@ -180,7 +255,8 @@ public class AgentServiceImpl implements AgentService {
                 request.getSurname(),
                 request.getTelephone(),
                 zoneResponse,
-                userMapper.entityToResponse(optionalAgent.get().getUser())
+                userMapper.entityToResponse(optionalAgent.get().getUser()),
+                null
         );
     }
 
@@ -224,7 +300,7 @@ public class AgentServiceImpl implements AgentService {
         for(final AgentZone agentZone: agentZones){
             final ZoneResponse zoneResponse = new ZoneResponse();
             zoneResponse.setId(agentZone.getZone().getId());
-            zoneResponse.setCity(agentZone.getZone().getCitta().getNome());
+            zoneResponse.setCity(agentZone.getZone().getCitta() != null ? agentZone.getZone().getCitta().getNome() : "N/A");
             zoneResponse.setName(agentZone.getZone().getName());
             zoneResponses.add(zoneResponse);
         }
@@ -386,6 +462,350 @@ public class AgentServiceImpl implements AgentService {
             agentZonePublisher.publish(audit);
         }
     }
+
+
+
+	@Override
+	public List<AgentConfigurationVoyageResponse> listAgentConfigurationVoyage(Long agentId) {
+		
+		final List<ConfigurationVoyage> listConfigurationVoyages = configurationVoyageRepository.findAllConfigurationVoyageFromAgentId(agentId);
+		
+		if(!listConfigurationVoyages.isEmpty()) {
+			final List<AgentConfigurationVoyageResponse> response = new ArrayList<AgentConfigurationVoyageResponse>();
+			for(final ConfigurationVoyage item: listConfigurationVoyages) {
+				response.add(
+						configurationVoyageMapper.entityToListConfigurationVoyage(
+								item, 
+								configurationVoyageZoneRepository.findAllConfigurationVoyageZoneConfVoyageId(item.getId()
+										)
+								)
+						);
+			}
+			return response;
+		}
+		
+		return new ArrayList<AgentConfigurationVoyageResponse>();
+	}
+
+
+
+	@Override
+	public List<VoyageOperationResponse> findAllOperationVoyageFromAgentId(Long agentId, final Integer offset, final Integer limit) {
+		
+		final List<VoyageCompany> findAllVoyageCompaniesFromAgent = voyageCompanyRepository.findAllVoyageCompanyFromAgentId(agentId, MethodUtils.getPagination(offset, limit));
+		
+		if(findAllVoyageCompaniesFromAgent.isEmpty()) {
+			return new ArrayList<VoyageOperationResponse>();
+		}
+		final List<VoyageOperationResponse> response = new ArrayList<VoyageOperationResponse>();
+		for(final VoyageCompany voyageCompany: findAllVoyageCompaniesFromAgent) {
+			final List<VoyageCompanyOperation> operations = voyageCompanyOperationRepository.findAllOperationFromVoyageCompanyId(voyageCompany.getId());
+			if(!operations.isEmpty()) {
+				for(final VoyageCompanyOperation op: operations) {
+					
+				}
+			}
+		}
+		
+		return response;
+	}
+
+	
+	private void createVoyage(final Agent agent, final List<Zone> zones) {
+		if(!zones.isEmpty()) {
+			for(final Zone zone: zones) {
+				Voyage voyage = new Voyage();
+				voyage.setAgent(agent);
+				voyage.setZone(zone);
+				
+				voyage.setCreatedAt(LocalDateTime.now());
+				voyage.setStartDate(LocalDate.now());
+				voyage.setEndDate(MethodUtils.getEndOfWorkWeek(voyage.getStartDate()));
+				voyage.setCreatedBy(jwtUtil.getUsernameLogged());
+				voyage.setIsFinished(Boolean.FALSE);
+				voyage = voyageRepository.save(voyage);
+				
+				final String code = "V-" + String.format("%04d", voyage.getId());
+				voyage.setCode(code);
+				
+				voyageRepository.save(voyage);
+				
+				final List<ZoneCompany> findAllZoneCompany = zoneCompanyRepository.findAllCompanyFromZone(zone.getId());
+				if(!findAllZoneCompany.isEmpty()) {
+					for(final ZoneCompany zoneCompany: findAllZoneCompany) {
+						VoyageCompany voyageCompany = new VoyageCompany();
+						voyageCompany.setAgent(agent);
+						voyageCompany.setCompany(zoneCompany.getCompany());
+						voyageCompany.setCreatedAt(LocalDateTime.now());
+						voyageCompany.setIsCompleted(Boolean.FALSE);
+						voyageCompany.setVoyage(voyage);
+						voyageCompany.setCreatedBy(jwtUtil.getUsernameLogged());
+						voyageCompanyRepository.save(voyageCompany);
+					}
+				}
+				
+			}
+		}
+	}
+
+	@Override
+	@Transactional
+	public AgentCurrentVoyageResponse currentVoyage(Long idAgent) {
+		
+		final Optional<Agent> optionalAgent = agentRepository.findById(idAgent);
+		
+		if(optionalAgent.isEmpty()) {
+			throw new RestException("Agent Not Found"); 
+		}
+		
+		final List<AgentCurrentVoyage> findCurrentVoyages = agentCurrentVoyageRepository.findCurrentVoyageFromAgentId(idAgent);
+		if(findCurrentVoyages.isEmpty()) {
+			throw new RestException("Not Exist Current Voyage For This Agent"); 
+		}
+		
+		final AgentCurrentVoyage currentVoyage = MethodUtils.firstElement(findCurrentVoyages);
+		
+		final List<ConfigurationVoyage> findConfigurationVoyages = configurationVoyageRepository.findAllConfigurationVoyageFromAgentIdAndWeek(idAgent, currentVoyage.getVoyageNumber());
+		if(findConfigurationVoyages.isEmpty()) {
+			throw new RestException("Not Exist Configuration Voyage For This Agent"); 
+		}
+		final ConfigurationVoyage configurationVoyage = MethodUtils.firstElement(findConfigurationVoyages);
+		
+		final List<Zone> zoneList = new ArrayList<Zone>();
+		
+		final AgentCurrentVoyageResponse response = new AgentCurrentVoyageResponse();
+		response.setZones(new ArrayList<ZoneResponse>());
+		
+		response.setCurrentVoyage(currentVoyage.getVoyageNumber());
+		response.setId(currentVoyage.getId());
+		
+		final List<ConfigurationVoyageZone> configurationVoyageZones = configurationVoyageZoneRepository.findAllConfigurationVoyageZoneConfVoyageId(configurationVoyage.getId());
+		if(configurationVoyageZones.isEmpty()) {
+			log.warn("Not Exist Zones For This Configuration Voyage");
+			return response;
+		}else {
+			for(final ConfigurationVoyageZone configurationVoyageZone: configurationVoyageZones) {
+				zoneList.add(configurationVoyageZone.getZone());
+				final String city = configurationVoyageZone.getZone().getCitta() != null ? configurationVoyageZone.getZone().getCitta().getNome() : "N/A";
+				response.getZones().add(
+						new ZoneResponse(configurationVoyageZone.getZone().getId(), configurationVoyageZone.getZone().getName(),city)
+						);
+			}
+		}
+		
+		final List<Voyage> findAllvoyage = voyageRepository.findPresentVoyageFromAgentId(idAgent);
+		if(findAllvoyage.isEmpty()) {
+			//Creo i viaggi per far funzionare la parte operazioni
+			createVoyage(optionalAgent.get(), zoneList);
+		}
+		
+		//GESTIONE CLIENTI EXTRA VIAGGI
+		final Voyage voyage = MethodUtils.firstElement(findAllvoyage);
+		final List<VoyageCompany> findExternalVoyageCompany = voyageCompanyRepository.findAllVoyageCompanyFromVoyageIdAndExternal(voyage.getId());
+		if(!findExternalVoyageCompany.isEmpty()) {
+			for(final VoyageCompany vce: findExternalVoyageCompany) {
+				final List<ZoneCompany> zonesCompany = zoneCompanyRepository.findZoneFromCompany(vce.getCompany().getId());
+				if(!zonesCompany.isEmpty()) {
+					final ZoneCompany zoneCompany = MethodUtils.firstElement(zonesCompany);
+					final String city = zoneCompany.getZone().getCitta() != null ? zoneCompany.getZone().getCitta().getNome() : "N/A";
+					response.getZones().add(
+							new ZoneResponse(zoneCompany.getZone().getId(), zoneCompany.getZone().getName(),city)
+							);
+				}
+			}
+		}
+		return response;
+	}
+
+
+
+	@Override
+	@Transactional
+	public void closeCurrentVoyage(Long idAgent) {
+		final Optional<Agent> optionalAgent = agentRepository.findById(idAgent);
+		
+		if(optionalAgent.isEmpty()) {
+			throw new RestException("Agent Not Found"); 
+		}
+		
+		final List<AgentCurrentVoyage> findCurrentVoyages = agentCurrentVoyageRepository.findCurrentVoyageFromAgentId(idAgent);
+		if(findCurrentVoyages.isEmpty()) {
+			throw new RestException("Not Exist Current Voyage For This Agent"); 
+		}
+		
+		final AgentCurrentVoyage currentVoyage = MethodUtils.firstElement(findCurrentVoyages);
+		
+		Integer nextVoyage = currentVoyage.getVoyageNumber();
+		
+		final List<ConfigurationVoyage> findConfigurationVoyagesFromAgent = configurationVoyageRepository.findAllConfigurationVoyageFromAgentId(idAgent);
+		
+		Boolean existNextVoyage = false;
+		
+		for(final ConfigurationVoyage configurationVoyage: findConfigurationVoyagesFromAgent) {
+			nextVoyage = currentVoyage.getVoyageNumber() + 1;
+			if(configurationVoyage.getWeek().equals(nextVoyage)) {
+				if(!existNextVoyage) {
+					existNextVoyage = true;
+					currentVoyage.setVoyageNumber(nextVoyage);
+					agentCurrentVoyageRepository.save(currentVoyage);
+				}
+			}
+		}
+		
+		//Chiudo il Viaggio
+		final List<Voyage> findVoyages = voyageRepository.findPresentVoyageFromAgentId(idAgent);
+		final Voyage voyage = MethodUtils.firstElement(findVoyages);
+		voyage.setIsFinished(Boolean.TRUE);
+		
+		voyageRepository.save(voyage);
+		
+	}
+
+
+
+	@Override
+	public List<AgentProductResponse> findAllProductsFromAgentId(Long idAgent) {
+		final Optional<Agent> optionalAgent = agentRepository.findById(idAgent);
+		
+		if(optionalAgent.isEmpty()) {
+			throw new RestException("Agent Not Found"); 
+		}
+		final List<AgentProductResponse> response = new ArrayList<AgentProductResponse>();
+
+		//TODO: Qui non deve tornare i prodotti cosi ma quelli caricati durante il carico dal magazzino
+		
+		final List<ProductResponse> productsFromClient = productClient.getProducts();
+		
+		if(productsFromClient.isEmpty()) {
+			return response;
+		}
+		
+		for(final ProductResponse productResponse: productsFromClient) {
+			final AgentProductResponse agentProductResponse = new AgentProductResponse();
+			agentProductResponse.setProductCode(productResponse.getCode());
+			agentProductResponse.setProductId(productResponse.getId());
+			agentProductResponse.setProductName(productResponse.getName());
+			agentProductResponse.setProductDescription(productResponse.getDescription());
+			agentProductResponse.setQuantity(productResponse.getQuantity());
+			response.add(agentProductResponse);
+		}
+		
+		
+		return response;
+	}
+
+
+
+	private VoyageCompany findVoyageFromCompany(final Long idCompany) {
+		List<VoyageCompany> voyageCompanies = new ArrayList<VoyageCompany>();
+		final Optional<Agent> optionalAgent = agentRepository.findAgentFromUserId(jwtUtil.getIdProfileLogged());
+		if(optionalAgent.isPresent()) {
+			voyageCompanies = voyageCompanyRepository
+					.findAllVoyageCompanyFromCompanyIdAndAgent(
+							idCompany, optionalAgent.get().getId());
+		}else {
+			voyageCompanies = voyageCompanyRepository
+					.findAllVoyageCompanyFromCompanyId(
+							idCompany);
+		}
+		
+		if(!voyageCompanies.isEmpty()) {
+			return MethodUtils.firstElement(voyageCompanies);
+		}
+		return null;
+	}
+	
+	@Override
+	public VoyageCustomerStatusAgentResponse currentVoyageCustomer(Long idAgent, Long zoneId) {
+
+		final Optional<Agent> optionalAgent = agentRepository.findById(idAgent);
+		
+		if(optionalAgent.isEmpty()) {
+			throw new RestException("Agent Not Found"); 
+		}
+		
+		final List<AgentCurrentVoyage> findCurrentVoyages = agentCurrentVoyageRepository.findCurrentVoyageFromAgentId(idAgent);
+		if(findCurrentVoyages.isEmpty()) {
+			throw new RestException("Not Exist Current Voyage For This Agent"); 
+		}
+		
+		final AgentCurrentVoyage currentVoyage = MethodUtils.firstElement(findCurrentVoyages);
+		
+		final List<ConfigurationVoyage> findConfigurationVoyages = configurationVoyageRepository.findAllConfigurationVoyageFromAgentIdAndWeek(idAgent, currentVoyage.getVoyageNumber());
+		if(findConfigurationVoyages.isEmpty()) {
+			throw new RestException("Not Exist Configuration Voyage For This Agent"); 
+		}
+		
+		final ConfigurationVoyage configurationVoyage = MethodUtils.firstElement(findConfigurationVoyages);
+		
+		final List<ConfigurationVoyageZone> configurationVoyageZones = configurationVoyageZoneRepository.findAllConfigurationVoyageZoneConfVoyageIdAndZoneId(configurationVoyage.getId(), zoneId);
+		
+		final ConfigurationVoyageZone configurationVoyageZone = MethodUtils.firstElement(configurationVoyageZones);
+		
+        final VoyageCustomerStatusAgentResponse voyageCustomerStatusAgentResponse = new VoyageCustomerStatusAgentResponse();
+		
+		final List<ZoneCompany> zoneCompanies = zoneCompanyRepository.findAllCompanyFromZone(configurationVoyageZone.getZone().getId());
+		
+		if(!zoneCompanies.isEmpty()) {
+			final List<VoyageClientResponse> toVisit = new ArrayList<VoyageClientResponse>();
+			final List<VoyageClientResponse> toVisited = new ArrayList<VoyageClientResponse>();
+			
+			
+			for(final ZoneCompany zc: zoneCompanies) {
+				final VoyageClientResponse voyageClientResponse = new VoyageClientResponse();
+				voyageClientResponse.setClientName(zc.getCompany().getName());
+				voyageClientResponse.setClientId(zc.getCompany().getId());
+				voyageClientResponse.setPiva(zc.getCompany().getPiva());
+				voyageClientResponse.setTelephone(zc.getCompany().getTelephone());
+				voyageClientResponse.setZoneName(configurationVoyageZone.getZone().getName());
+				final List<CompanyAddress> findListAddress = companyAddressRepository.findAllCompanyAddressFromCompanyId(zc.getCompany().getId());
+				if(!findListAddress.isEmpty()) {
+					final CompanyAddress companyAddress = findListAddress.get(0);
+					voyageClientResponse.setLat(companyAddress.getLat());
+					voyageClientResponse.setLon(companyAddress.getLon());
+					voyageClientResponse.setAddress(companyAddress.getAddress() != null ? companyAddress.getAddress().getAddress() : null);
+				}
+				
+				
+				final VoyageCompany voyageCompany = findVoyageFromCompany(zc.getCompany().getId());
+				if(voyageCompany != null) {
+					voyageClientResponse.setVoyageId(voyageCompany.getVoyage().getId());
+				}
+				
+				final List<CompanyStockResponse> stockCompany = new ArrayList<CompanyStockResponse>();
+				
+				final List<CompanyStock> stockEntity = companyStockRepository.findAllStockFromCompanyId(zc.getCompany().getId());
+				if(!stockEntity.isEmpty()) {
+					for(final CompanyStock c: stockEntity) {
+						final CompanyStockResponse companyStockResponse = new CompanyStockResponse();
+						companyStockResponse.setCompanyId(c.getCompany().getId());
+						final ProductResponse productResponse = productClient.getProductInfo(c.getProductIdExt());
+						companyStockResponse.setProductCode(productResponse.getCode());
+						companyStockResponse.setProductName(productResponse.getName());
+						companyStockResponse.setQuantity(c.getQuantity());
+						stockCompany.add(companyStockResponse);
+						}
+				}
+				
+				/*if(isVisitCarreiedOut(zc.getCompany(), optionalVoyage.get())) {
+					toVisited.add(voyageClientResponse);
+				}else {
+					
+				}*/
+				voyageClientResponse.setStocks(stockCompany);
+				toVisit.add(voyageClientResponse);
+			}
+			
+			voyageCustomerStatusAgentResponse.setCustomersToVisit(toVisit);
+			voyageCustomerStatusAgentResponse.setCustomersToVisited(toVisited);
+			voyageCustomerStatusAgentResponse.setCounterCustomersToVisit(toVisit.size());
+			voyageCustomerStatusAgentResponse.setCounterCustomersVisited(toVisited.size());
+			
+		}
+		
+		return voyageCustomerStatusAgentResponse;
+		
+	}
 
 
 }

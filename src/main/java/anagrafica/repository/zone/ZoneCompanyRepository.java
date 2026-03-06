@@ -10,10 +10,10 @@ import java.util.List;
 
 @Repository
 public interface ZoneCompanyRepository extends JpaRepository<ZoneCompany, Long> {
-    @Query("SELECT c FROM ZoneCompany c WHERE c.zone.id = :zoneId AND c.isDeleted = false")
+    @Query("SELECT c FROM ZoneCompany c WHERE c.zone.id = :zoneId AND c.isDeleted = false AND c.company.isDeleted = false")
     List<ZoneCompany> findAllCompanyFromZone(@Param("zoneId") Long zoneId);
 
-    @Query("SELECT c FROM ZoneCompany c WHERE c.company.id = :companyId AND c.isDeleted = false")
+    @Query("SELECT c FROM ZoneCompany c WHERE c.company.id = :companyId AND c.isDeleted = false AND c.company.isDeleted = false")
     List<ZoneCompany> findZoneFromCompany(@Param("companyId") Long companyId);
     
 }

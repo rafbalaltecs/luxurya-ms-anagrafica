@@ -3,12 +3,15 @@ package anagrafica.controller;
 import anagrafica.dto.user.UserRequest;
 import anagrafica.dto.user.UserResponse;
 import anagrafica.service.user.UserService;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,10 +31,23 @@ public class UserController {
     }
     
     @PostMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<UserResponse> creat(@RequestBody final UserRequest request){
+    public ResponseEntity<UserResponse> create(@RequestBody final UserRequest request){
     	return ResponseEntity.ok(userService.create(request));
     }
 
+    @PutMapping(value = "/{id}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<UserResponse> update(
+    		@PathVariable("id") Long id,
+    		@RequestBody final UserRequest request){
+    	return ResponseEntity.ok(userService.update(id, request));
+    }
+    
+    @DeleteMapping(value = "/{id}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void delete(
+    		@PathVariable("id") Long id){
+    	userService.delete(id);
+    }
+    
     @GetMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<List<UserResponse>> findAll(
             @RequestParam("offset") Integer offset,
@@ -39,4 +55,6 @@ public class UserController {
     ){
         return ResponseEntity.ok(userService.findAll(offset, limit));
     }
+    
+    
 }

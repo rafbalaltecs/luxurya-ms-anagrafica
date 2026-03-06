@@ -8,7 +8,7 @@ spring:
 
   # --- CONFIGURAZIONE POSTGRES ---
   datasource:
-    url: jdbc:postgresql://16.16.192.42:5432/mydb
+    url: jdbc:postgresql://16.16.115.211:5432/mydb
     username: postgre
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -32,13 +32,13 @@ spring:
   # --- CONFIGURAZIONE MONGODB ---
   data:
     mongodb:
-      uri: mongodb://admin:admin123@16.16.192.42:27017/luxurya?authSource=admin
+      uri: mongodb://admin:admin123@16.16.115.211:27017/luxurya?authSource=admin
       # in alternativa puoi separare host/port/db:
       # host: localhost
       # port: 27017
       database: luxurya
     redis:
-      host: 16.16.192.42
+      host: 16.16.115.211
       port: 6379
       password: ""
       timeout: 6000

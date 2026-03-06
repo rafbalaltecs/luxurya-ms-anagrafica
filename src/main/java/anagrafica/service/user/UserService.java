@@ -13,4 +13,5 @@ public interface UserService {
 
     //Update LastLogin
     void lastLoginUpdate(final String email, final LocalDateTime eventDate);
+    void delete(final Long id);
 }

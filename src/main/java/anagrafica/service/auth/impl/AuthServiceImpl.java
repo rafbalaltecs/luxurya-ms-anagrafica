@@ -4,9 +4,11 @@ import anagrafica.dto.auth.LoginRequest;
 import anagrafica.dto.auth.LoginResponse;
 import anagrafica.dto.event.LoginEventDTO;
 import anagrafica.dto.shared.UserDataShared;
+import anagrafica.entity.Agent;
 import anagrafica.entity.User;
 import anagrafica.exception.RestException;
 import anagrafica.publisher.LoginPublisher;
+import anagrafica.repository.agent.AgentRepository;
 import anagrafica.repository.user.UserRepository;
 import anagrafica.service.auth.AuthService;
 import anagrafica.service.cache.RedisService;
@@ -35,13 +37,15 @@ public class AuthServiceImpl implements AuthService {
     private final AuthMapper authMapper;
 
     private final LoginPublisher loginPublisher;
+    private final AgentRepository agentRepository;
 
-    public AuthServiceImpl(JwtUtil jwtUtil, RedisService redisService, UserRepository userRepository, AuthMapper authMapper, LoginPublisher loginPublisher) {
+    public AuthServiceImpl(JwtUtil jwtUtil, RedisService redisService, UserRepository userRepository, AuthMapper authMapper, LoginPublisher loginPublisher, AgentRepository agentRepository) {
         this.jwtUtil = jwtUtil;
         this.redisService = redisService;
         this.userRepository = userRepository;
         this.authMapper = authMapper;
         this.loginPublisher = loginPublisher;
+        this.agentRepository = agentRepository;
     }
 
     @Override
@@ -80,11 +84,19 @@ public class AuthServiceImpl implements AuthService {
         claims.put("iduser", optionalUser.get().getId());
         claims.put("routes", compactRoutes(authResponse.getUser().getRoutes()));
         authResponse.setToken(jwtUtil.generateToken(loginRequest.getUsername(), claims));
+        
+        final Optional<Agent> optionalAgent = agentRepository.findAgentFromUserId(optionalUser.get().getId());
+        if(optionalAgent.isPresent()) {
+        	authResponse.setIdAgent(optionalAgent.get().getId());
+        	authResponse.setIsAgent(Boolean.TRUE);
+        	authResponse.setName(optionalAgent.get().getName());
+        	authResponse.setSurname(optionalAgent.get().getSurname());
+        }
 
         final UserDataShared userDataShared = authMapper.getUserDataShared(optionalUser.get(), authResponse.getToken());
         userDataShared.setRoutes(authResponse.getUser().getRoutes());
 
-        redisService.saveWithExpiration(authResponse.getToken(), userDataShared, 3600, TimeUnit.SECONDS);
+        redisService.saveUserData(authResponse.getToken(), userDataShared);
         loginPublisher.publish(new LoginEventDTO(optionalUser.get().getEmail(), LocalDateTime.now().toString()));
 
         return authResponse ;

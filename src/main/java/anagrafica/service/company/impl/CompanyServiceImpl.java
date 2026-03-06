@@ -1,10 +1,17 @@
 package anagrafica.service.company.impl;
 
 import anagrafica.client.CompanyExecusClient;
+import anagrafica.client.GeocodingClient;
+import anagrafica.client.ProductClient;
 import anagrafica.client.response.execusbi.ExecusBICompanyInfoResponse;
+import anagrafica.client.response.geo.GeocodingResult;
 import anagrafica.dto.agent.AgentResponse;
+import anagrafica.dto.company.CompanyInfoResponse;
+import anagrafica.dto.company.CompanyMovementInner;
 import anagrafica.dto.company.CompanyRequest;
 import anagrafica.dto.company.CompanyResponse;
+import anagrafica.dto.company.CompanyStockResponse;
+import anagrafica.dto.ext.ProductResponse;
 import anagrafica.dto.zone.ZoneResponse;
 import anagrafica.entity.*;
 import anagrafica.exception.RestException;
@@ -13,7 +20,10 @@ import anagrafica.repository.agent.AgentRepository;
 import anagrafica.repository.agent.AgentZoneRepository;
 import anagrafica.repository.company.CompanyAddressRepository;
 import anagrafica.repository.company.CompanyRepository;
+import anagrafica.repository.company.CompanyStockRepository;
 import anagrafica.repository.geography.CittaRepository;
+import anagrafica.repository.voyage.VoyageCompanyOperationRepository;
+import anagrafica.repository.voyage.VoyageCompanyRepository;
 import anagrafica.repository.zone.ZoneCompanyRepository;
 import anagrafica.repository.zone.ZoneRepository;
 import anagrafica.service.address.AddressMapper;
@@ -30,6 +40,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,8 +60,29 @@ public class CompanyServiceImpl implements CompanyService {
     private final AddressMapper addressMapper;
     private final AgentMapper agentMapper;
     private final JwtUtil jwtUtil;
+    private final GeocodingClient geocodingClient;
+    private final CompanyStockRepository companyStockRepository;
+    private final ProductClient productClient;
+    private final VoyageCompanyRepository voyageCompanyRepository;
+    private final VoyageCompanyOperationRepository voyageCompanyOperationRepository;
 
-    public CompanyServiceImpl(CompanyRepository companyRepository, CompanyExecusClient client, CittaRepository cittaRepository, ZoneCompanyRepository zoneCompanyRepository, AgentZoneRepository agentZoneRepository, ZoneRepository zoneRepository, AgentRepository agentRepository, AddressRepository addressRepository, CompanyAddressRepository companyAddressRepository, AddressMapper addressMapper, AgentMapper agentMapper, JwtUtil jwtUtil) {
+    public CompanyServiceImpl(CompanyRepository companyRepository, 
+    		CompanyExecusClient client, 
+    		CittaRepository cittaRepository, 
+    		ZoneCompanyRepository zoneCompanyRepository, 
+    		AgentZoneRepository agentZoneRepository, 
+    		ZoneRepository zoneRepository, 
+    		AgentRepository agentRepository, 
+    		AddressRepository addressRepository, 
+    		CompanyAddressRepository companyAddressRepository, 
+    		AddressMapper addressMapper, 
+    		AgentMapper agentMapper, 
+    		JwtUtil jwtUtil, 
+    		GeocodingClient geocodingClient, 
+    		CompanyStockRepository companyStockRepository, 
+    		ProductClient productClient,
+    		VoyageCompanyRepository voyageCompanyRepository,
+    		VoyageCompanyOperationRepository voyageCompanyOperationRepository) {
         this.companyRepository = companyRepository;
         this.client = client;
         this.cittaRepository = cittaRepository;
@@ -63,6 +95,11 @@ public class CompanyServiceImpl implements CompanyService {
         this.addressMapper = addressMapper;
         this.agentMapper = agentMapper;
         this.jwtUtil = jwtUtil;
+        this.geocodingClient = geocodingClient;
+        this.companyStockRepository = companyStockRepository;
+        this.productClient = productClient;
+        this.voyageCompanyRepository = voyageCompanyRepository;
+        this.voyageCompanyOperationRepository = voyageCompanyOperationRepository;
     }
 
     @Override
@@ -109,7 +146,7 @@ public class CompanyServiceImpl implements CompanyService {
                 .findFirst()
                 .orElseThrow(() -> new RestException("Zona non trovata per l'agente selezionato"));
 
-
+        
         Company company = new Company();
         try{
             final ExecusBICompanyInfoResponse response = client.searchByCf(request.getPiva());
@@ -154,6 +191,16 @@ public class CompanyServiceImpl implements CompanyService {
         companyAddress.setAddress(address);
         companyAddress.setCompany(company);
         companyAddress.setDeleted(Boolean.FALSE);
+        
+        try {
+        	final String sAddress = address.getAddress() + " , " + address.getCitta().getNome();
+        	log.info("Search address GEO {}",sAddress);
+        	final GeocodingResult geoResult = geocodingClient.geocode(sAddress);
+        	companyAddress.setLat(String.valueOf(geoResult.latitude()));
+        	companyAddress.setLon(String.valueOf(geoResult.longitude()));
+        }catch (Exception e) {
+			log.error(e.getMessage());
+		}
 
         companyAddressRepository.save(companyAddress);
 
@@ -282,6 +329,16 @@ public class CompanyServiceImpl implements CompanyService {
         companyAddress.setAddress(address);
         companyAddress.setCompany(optionalCompany.get());
         companyAddress.setDeleted(Boolean.FALSE);
+        
+        try {
+        	final String sAddress = address.getAddress() + " , " + address.getCitta().getNome();
+        	log.info("Search address GEO {}",sAddress);
+        	final GeocodingResult geoResult = geocodingClient.geocode(sAddress);
+        	companyAddress.setLat(String.valueOf(geoResult.latitude()));
+        	companyAddress.setLon(String.valueOf(geoResult.longitude()));
+        }catch (Exception e) {
+			log.error(e.getMessage());
+		}
 
         companyAddressRepository.save(companyAddress);
 
@@ -395,6 +452,7 @@ public class CompanyServiceImpl implements CompanyService {
                                         agentZone.getAgent().getSurname(),
                                         null,
                                         zoneResponse,
+                                        null,
                                         null
                                 )
                         );
@@ -405,4 +463,226 @@ public class CompanyServiceImpl implements CompanyService {
         }
         return responses;
     }
+    
+
+	@Override
+	public GeocodingResult findGeofromcompanyId(Long companyId) {
+		final Optional<Company> optionalCompany = companyRepository.findById(companyId);
+
+        if(optionalCompany.isEmpty()){
+            throw new RestException("Company Not Exist");
+        }
+        
+        final List<CompanyAddress> listCompanyAddress = companyAddressRepository.findAllCompanyAddressFromCompanyId(companyId);
+        
+        if(listCompanyAddress.isEmpty()) {
+        	throw new RestException("Not exist Address for this company");
+        }
+        
+        final Address address = listCompanyAddress.get(0).getAddress();
+        
+        try {
+        	final String sAddress = address.getAddress() + " , " + address.getCitta().getNome();
+        	log.info("Search address GEO {}",sAddress);
+        	return geocodingClient.geocode(sAddress);
+        }catch (Exception e) {
+			log.error(e.getMessage());
+		}
+
+		return null;
+	}
+
+	@Override
+	@Transactional
+	public void syncGeoCompany() {
+		final List<Company> findAllCompany = companyRepository.findAll();
+		for(final Company c: findAllCompany) {
+			if(Boolean.FALSE.equals(c.getDeleted())) {
+				final List<CompanyAddress> listCompanyAddress = companyAddressRepository.findAllCompanyAddressFromCompanyId(c.getId());
+		        
+		        if(listCompanyAddress.isEmpty()) {
+		        	throw new RestException("Not exist Address for this company");
+		        }
+		        
+		        final CompanyAddress companyAddress = listCompanyAddress.get(0);
+		        
+		        try {
+		        	final String sAddress = companyAddress.getAddress().getAddress() + " , " + companyAddress.getAddress().getCitta().getNome();
+		        	
+		        	log.info("Search address GEO {}",sAddress);
+		        	
+		        	final GeocodingResult geoResult =  geocodingClient.geocode(sAddress);
+		        	companyAddress.setLat(String.valueOf(geoResult.latitude()));
+		        	companyAddress.setLon(String.valueOf(geoResult.longitude()));
+		        	
+		        	companyAddressRepository.save(companyAddress);
+		        	
+		        }catch (Exception e) {
+					log.error(e.getMessage());
+				}
+			}
+		}
+		
+	}
+
+	@Override
+	@Transactional
+	public CompanyResponse createFromLegacy(CompanyRequest request) {
+
+	        final Optional<Company> optionalCompanyWithPiva = companyRepository.findCompanyWithSamePiva(request.getPiva() != null ? request.getPiva().trim() : null);
+	        final Optional<Company> optionalCompanyWithSameName = companyRepository.findCompanyWithSameName(request.getName().trim());
+	       // final Optional<Company> optionalCompanyWithCode = companyRepository.findCompanyWithSameCode(request.getCode().trim());
+
+	        if(optionalCompanyWithPiva.isPresent()){
+	        	if(StringUtils.isEmpty(optionalCompanyWithPiva.get().getCodeLegacy())) {
+	        		log.info("Non esiste codice legacy per questa piva {} Aggiungo codice legacy {} ", request.getPiva(), request.getCodeLegacy());
+	        		optionalCompanyWithPiva.get().setCodeLegacy(request.getCodeLegacy());
+	        		companyRepository.save(optionalCompanyWithPiva.get());
+	        	}
+	        	return null;
+	        }
+
+	        if(optionalCompanyWithSameName.isPresent()){
+	        	return null;
+	        }
+
+	        if(request.getAddress() == null){
+	        	return null;
+	        }
+
+	        final Optional<Zone> optionalZone = zoneRepository.findById(request.getAddress().getZoneId());
+
+	        if(optionalZone.isEmpty()){
+	            return null;
+	        }
+
+
+	        
+	        Company company = new Company();
+
+	        if(StringUtils.isEmpty(company.getPiva())){
+	            company.setPiva(request.getPiva());
+	            company.setName(request.getName());
+	        }
+
+	        company.setDescription(request.getDescription());
+
+	        company = companyRepository.save(company);
+	        company.setCode("C-" + company.getId().toString());
+	        company.setDeleted(Boolean.FALSE);
+	        company.setTelephone(request.getTelephone());
+	        company.setCodeLegacy(request.getCodeLegacy());
+	        companyRepository.save(company);
+
+
+	        final ZoneCompany zoneCompany = new ZoneCompany();
+	        zoneCompany.setCompany(company);
+	        zoneCompany.setZone(optionalZone.get());
+	        zoneCompany.setDeleted(Boolean.FALSE);
+	        zoneCompanyRepository.save(zoneCompany);
+
+	        Address address = new Address();
+	        address.setAddress(request.getAddress().getAddress());
+	        address.setCitta(optionalZone.get().getCitta());
+	        address.setDeleted(Boolean.FALSE);
+
+	        address = addressRepository.save(address);
+
+	        final CompanyAddress companyAddress = new CompanyAddress();
+	        companyAddress.setAddress(address);
+	        companyAddress.setCompany(company);
+	        companyAddress.setDeleted(Boolean.FALSE);
+	        
+	        try {
+	        	final String sAddress = address.getAddress() + " , " + address.getCitta().getNome();
+	        	log.info("Search address GEO {}",sAddress);
+	        	final GeocodingResult geoResult = geocodingClient.geocode(sAddress);
+	        	companyAddress.setLat(String.valueOf(geoResult.latitude()));
+	        	companyAddress.setLon(String.valueOf(geoResult.longitude()));
+	        }catch (Exception e) {
+	        	log.error("Err: address GEO");
+				log.error(e.getMessage());
+			}
+
+	        companyAddressRepository.save(companyAddress);
+
+	        return new CompanyResponse(
+	                company.getId(),
+	                company.getName(),
+	                company.getPiva(),
+	                company.getCode(),
+	                company.getDescription(),
+	                optionalZone.get().getName(),
+	                address.getAddress(),
+	                request.getTelephone(),
+	                company.getPiva(),
+	                addressMapper.toResponse(address),
+	                null
+	        );
+	}
+
+	@Override
+	public Citta findCittaExistName(String name) {
+		final List<Citta> optionalCitta = cittaRepository.findByNomeContainingIgnoreCase(name);
+		if(!optionalCitta.isEmpty()) {
+			return optionalCitta.get(0);
+		}
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public CompanyInfoResponse findAllStockFromCompany(Long companyId) {
+		
+		final HashMap<Long, ProductResponse> mapProductsCache = new HashMap<Long, ProductResponse>();
+		
+		final CompanyInfoResponse response = new CompanyInfoResponse();
+		response.setStock(new ArrayList<CompanyStockResponse>());
+		response.setMovements(new ArrayList<CompanyMovementInner>());
+		
+		final List<CompanyStock> findAllEntities = companyStockRepository.findAllStockFromCompanyId(companyId);
+		
+		if(findAllEntities.isEmpty()) {
+			return response;
+		}
+		
+		for(final CompanyStock cs: findAllEntities) {
+			
+			final CompanyStockResponse companyStockResponse = new CompanyStockResponse();
+			companyStockResponse.setCompanyId(cs.getCompany().getId());
+			companyStockResponse.setCompanyStockId(cs.getId());
+			companyStockResponse.setQuantity(cs.getQuantity());
+			if(!mapProductsCache.containsKey(cs.getProductIdExt())) {
+				mapProductsCache.put(cs.getProductIdExt(), productClient.getProductById(cs.getProductIdExt()));
+			}
+			final ProductResponse productResponse = mapProductsCache.get(cs.getProductIdExt());
+			if(productResponse != null) {
+				companyStockResponse.setProductCode(productResponse.getCode());
+				companyStockResponse.setProductName(productResponse.getName());
+			}
+			
+			response.getStock().add(companyStockResponse);
+			
+			final List<VoyageCompany> findAllVoyageCompany = voyageCompanyRepository.findAllVoyageCompanyFromCompanyId(companyId);
+			
+			for(final VoyageCompany voyageCompany: findAllVoyageCompany) {
+				final List<VoyageCompanyOperation> operations = voyageCompanyOperationRepository.findAllOperationFromVoyageCompanyId(voyageCompany.getId());
+				if(!operations.isEmpty()) {
+					final CompanyMovementInner movement = new CompanyMovementInner();
+					for(final VoyageCompanyOperation operation: operations) {
+						movement.setCode(operation.getId().toString());
+						movement.setTypePaymentName(operation.getTypePayment() != null ? operation.getTypePayment().getName() : "CONTANTI");
+						movement.setNote("");
+						movement.setDocumentName("");
+						movement.setOperationId(operation.getId());
+						movement.setOperationName(operation.getOperation() != null ? operation.getOperation().getName() : "NA");
+						response.getMovements().add(movement);
+					}
+				}
+			}
+			
+		}
+		
+		return response;
+	}
 }

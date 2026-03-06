@@ -13,4 +13,5 @@ public class CompanyRequest {
     private String telephoneTwo;
     private String mobile;
     private Long agentId;
+    private String codeLegacy;
 }

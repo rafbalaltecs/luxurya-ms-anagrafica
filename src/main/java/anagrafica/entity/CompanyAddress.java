@@ -23,4 +23,8 @@ public class CompanyAddress extends AuditableEntityExt {
     @ManyToOne
     @JoinColumn(name = "CompanyId")
     private Company company;
+    @Column(name = "Lat")
+    private String lat;
+    @Column(name = "Lon")
+    private String lon;
 }

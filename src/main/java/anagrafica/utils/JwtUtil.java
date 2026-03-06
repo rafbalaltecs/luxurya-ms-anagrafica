@@ -21,6 +21,7 @@ public class JwtUtil {
     private String languageLogged;
     private Long idProfileLogged;
     private Set<String> routes;
+    private String token;
 
     private Boolean isGuest;
     private Boolean isAdmin;
@@ -37,6 +38,14 @@ public class JwtUtil {
 
     public String getUsernameLogged() {
         return usernameLogged;
+    }
+    
+    public String getToken() {
+    	return token;
+    }
+    
+    public void setToken(String token) {
+    	this.token = token;
     }
 
     public String getLanguageLogged() {
@@ -86,24 +95,27 @@ public class JwtUtil {
     public String generateToken(String username) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + expirationMs);
-        return Jwts.builder()
+        token = Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(now)
                 .setExpiration(exp)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+        return token;
+      
     }
 
     public String generateToken(String username, Map<String, Object> claims) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + expirationMs);
-        return Jwts.builder()
+        token = Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(now)
                 .setClaims(claims)
                 .setExpiration(exp)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+        return token;
     }
 
     public void validateAndGetSubject(String token) {
@@ -113,6 +125,7 @@ public class JwtUtil {
             setIdProfileLogged(Long.valueOf( (Integer) claims.getBody().get("iduser") ));
             setIsAdmin((Boolean) claims.getBody().get("isAdmin"));
             setCompactRoutes((String) claims.getBody().get("routes"));
+            setToken(token);
         } catch (JwtException ex) {
             throw new RestException("Errore Validazione Token: " + ex.getMessage());
         }
