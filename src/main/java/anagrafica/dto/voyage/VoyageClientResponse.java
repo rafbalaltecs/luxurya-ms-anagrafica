@@ -18,4 +18,5 @@ public class VoyageClientResponse {
 	private String telephone;
 	List<CompanyStockResponse> stocks;
 	private Long voyageId;
+	private Integer total;
 }

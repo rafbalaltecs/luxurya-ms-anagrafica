@@ -6,6 +6,7 @@ import anagrafica.dto.company.CompanyInfoResponse;
 import anagrafica.dto.company.CompanyRequest;
 import anagrafica.dto.company.CompanyResponse;
 import anagrafica.dto.company.CompanyStockResponse;
+import anagrafica.dto.company.CompanyTypeResponse;
 import anagrafica.dto.zone.ZoneResponse;
 import anagrafica.entity.Citta;
 import anagrafica.entity.CompanyStock;
@@ -18,6 +19,8 @@ public interface CompanyService {
     CompanyResponse update(final Long id, CompanyRequest request);
     void delete(final Long id);
     List<CompanyResponse> findAll(final Integer offset, final Integer limit);
+    
+    List<CompanyResponse> findAll(final Integer offset, final Integer limit, final String name);
 
     List<AgentResponse> findAllAgentsFromCompanyId(final Long companyId);
     
@@ -28,4 +31,6 @@ public interface CompanyService {
     Citta findCittaExistName(final String name);
     
     CompanyInfoResponse findAllStockFromCompany(final Long companyId);
+    
+    List<CompanyTypeResponse> findAllType();
 }

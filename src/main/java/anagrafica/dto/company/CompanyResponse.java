@@ -20,4 +20,6 @@ public class CompanyResponse {
     private String cf;
     private AddressResponse addressResponse;
     private AgentResponse agent;
+    private Long typeId;
+    private String typeName;
 }

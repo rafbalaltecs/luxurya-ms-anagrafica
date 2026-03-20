@@ -43,7 +43,7 @@ public class VoyageMapper {
 							company.getName(), 
 							company.getPiva(), 
 							company.getCode(), 
-							company.getDescription(), null, null, null, null, null, null));
+							company.getDescription(), null, null, null, null, null, null, null, null));
 				}
 				voyageResponse.setTotalCompany(companyResponses.size());
 				voyageResponse.setCompany(companyResponses);

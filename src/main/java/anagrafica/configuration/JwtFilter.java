@@ -41,13 +41,11 @@ import jakarta.servlet.http.HttpServletResponse;
 
         String path = req.getRequestURI();
 
-        // Aggiungi gli header CORS
         resp.setHeader("Access-Control-Allow-Origin", "*");
         resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         resp.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept");
         resp.setHeader("Access-Control-Max-Age", "3600");
 
-        // Se è una richiesta OPTIONS (preflight), rispondi subito senza validare il JWT
         if ("OPTIONS".equalsIgnoreCase(req.getMethod())) {
             resp.setStatus(HttpServletResponse.SC_OK);
             return;

@@ -5,8 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import anagrafica.client.GeocodingClient;
+import anagrafica.client.response.geo.GeocodingResult;
 import anagrafica.dto.agent.AgentResponse;
 import anagrafica.dto.company.CompanyResponse;
 import anagrafica.dto.event.AgentZoneEventDTO;
@@ -29,6 +32,7 @@ import anagrafica.repository.zone.ZoneCompanyRepository;
 import anagrafica.repository.zone.ZoneRepository;
 import anagrafica.service.zone.ZoneService;
 import anagrafica.utils.JwtUtil;
+import anagrafica.utils.MethodUtils;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,8 +49,9 @@ public class ZoneServiceImpl implements ZoneService {
     private final CompanyZonePublisher companyZonePublisher;
     private final CompanyZoneAuditRepository companyZoneAuditRepository;
     private final JwtUtil jwtUtil;
+    private final GeocodingClient geocodingClient;
 
-    public ZoneServiceImpl(ZoneRepository zoneRepository, AgentZoneRepository agentZoneRepository, CittaRepository cittaRepository, ZoneCompanyRepository zoneCompanyRepository, AgentZonePublisher agentZonePublisher, CompanyZonePublisher companyZonePublisher, CompanyZoneAuditRepository companyZoneAuditRepository, JwtUtil jwtUtil) {
+    public ZoneServiceImpl(ZoneRepository zoneRepository, AgentZoneRepository agentZoneRepository, CittaRepository cittaRepository, ZoneCompanyRepository zoneCompanyRepository, AgentZonePublisher agentZonePublisher, CompanyZonePublisher companyZonePublisher, CompanyZoneAuditRepository companyZoneAuditRepository, JwtUtil jwtUtil, GeocodingClient geocodingClient) {
         this.zoneRepository = zoneRepository;
         this.agentZoneRepository = agentZoneRepository;
         this.cittaRepository = cittaRepository;
@@ -55,6 +60,7 @@ public class ZoneServiceImpl implements ZoneService {
         this.companyZonePublisher = companyZonePublisher;
         this.companyZoneAuditRepository = companyZoneAuditRepository;
         this.jwtUtil = jwtUtil;
+        this.geocodingClient = geocodingClient;
     }
 
     @Override
@@ -205,6 +211,8 @@ public class ZoneServiceImpl implements ZoneService {
                             null,
                             null,
                             null,
+                            null,
+                            null,
                             null
                     )
             );
@@ -232,6 +240,7 @@ public class ZoneServiceImpl implements ZoneService {
                             agentZone.getAgent().getSurname(),
                             null,
                             zoneResponse,
+                            null,
                             null,
                             null
                     )
@@ -292,5 +301,74 @@ public class ZoneServiceImpl implements ZoneService {
         zone = zoneRepository.save(zone);
 
         return new ZoneResponse(zone.getId(), zone.getName(), null);
+	}
+	
+	@Transactional
+	private void toSaveZone(final Zone zone) {
+		 if (zone.getName() != null) {
+             try {
+                 log.info("Zone ID {} and NAME: {}", zone.getId(), zone.getName());
+                 final GeocodingResult result = geocodingClient.geocode(zone.getName());
+                 log.info("LAT {} and LON {}",result.latitude(), result.longitude());
+                 zone.setLat(result.latitude());
+                 zone.setLon(result.longitude());
+                 zoneRepository.save(zone);
+                 
+                 Thread.sleep(1100);
+             } catch (Exception e) {
+                 log.error("❌ Errore per zona {} - {}: {}", zone.getId(), zone.getName(), e.getMessage());
+             }
+         }
+	}
+
+	@Override
+	public void populateCoordinate() {
+		int pageNumber = 0;
+	    int pageSize = 20;
+	    Page<Zone> page;
+
+	    do {
+	    	log.info("pageNumber {} and pageSize {}", pageNumber, pageSize);
+	        page = zoneRepository.findAllNotDeletedWithNotCoordinate(MethodUtils.getPagination(pageNumber, pageSize));
+
+	        for (Zone zone : page) {
+	        	try {
+	        		toSaveZone(zone);
+	        	}catch (Exception e) {
+					log.error(e.getMessage());
+				}
+	        }
+
+	        pageNumber++;
+
+	    } while (page.hasNext());
+	}
+
+	@Override
+	public List<ZoneResponse> findAll(Integer offset, Integer limit) {
+		final List<ZoneResponse> response = new ArrayList<>();
+		final Page<Zone> entityList = zoneRepository.findAllNotDeleted(MethodUtils.getPagination(offset, limit));
+		if(!entityList.isEmpty()) {
+			for(final Zone item: entityList) {
+				response.add(
+						new ZoneResponse(item.getId(), item.getName(), item.getCitta() != null ? item.getCitta().getNome() : "N/A")
+						);
+			}
+		}
+		return response;
+	}
+
+	@Override
+	public List<ZoneResponse> search(Integer offset, Integer limit, String name) {
+		final List<ZoneResponse> response = new ArrayList<>();
+		final Page<Zone> entityList = zoneRepository.searchAllNotDeleted(name, MethodUtils.getPagination(offset, limit));
+		if(!entityList.isEmpty()) {
+			for(final Zone item: entityList) {
+				response.add(
+						new ZoneResponse(item.getId(), item.getName(), item.getCitta() != null ? item.getCitta().getNome() : "N/A")
+						);
+			}
+		}
+		return response;
 	}
 }

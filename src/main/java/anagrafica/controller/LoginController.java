@@ -3,6 +3,7 @@ package anagrafica.controller;
 import anagrafica.dto.auth.GeneratePasswordRequest;
 import anagrafica.dto.auth.LoginRequest;
 import anagrafica.dto.auth.LoginResponse;
+import anagrafica.dto.auth.LoginTokenRequest;
 import anagrafica.service.auth.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,11 @@ public class LoginController {
     @PostMapping(value = "/login", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<LoginResponse> login(@RequestBody final LoginRequest request){
         return ResponseEntity.ok(authService.login(request));
+    }
+    
+    @PostMapping(value = "/token", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<LoginResponse> loginToken(@RequestBody final LoginTokenRequest request){
+        return ResponseEntity.ok(authService.loginWithToken(request));
     }
 
     @PostMapping(value = "/generate-password", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)

@@ -13,6 +13,8 @@ public interface ZoneService {
     ZoneResponse findByName(final String name);
     ZoneResponse update(final Long id, final ZoneRequest request);
     List<ZoneResponse> findAll();
+    List<ZoneResponse> findAll(final Integer offset, final Integer limit);
+    List<ZoneResponse> search(final Integer offset, final Integer limit, final String name);
     void delete(final Long id);
 
     List<CompanyResponse> findAllCompanyFromZoneId(final Long zoneId);
@@ -21,4 +23,6 @@ public interface ZoneService {
     void audit(final CompanyZoneEventDTO companyZoneEventDTO);
     
     ZoneResponse createForImport(final ZoneRequest request);
+    
+    void populateCoordinate();
 }

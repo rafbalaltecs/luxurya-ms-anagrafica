@@ -15,6 +15,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.email = :email AND u.isDeleted = false ")
     Optional<User> findByEmail(
             @Param("email") final String email);
+    
+    @Query("SELECT u FROM User u WHERE u.tokenAuth = :tokenAuth AND u.isDeleted = false ")
+    Optional<User> findByAuthToken(
+            @Param("tokenAuth") final String tokenAuth);
 
     @Query("SELECT u FROM User u WHERE u.isDeleted = false")
     Page<User> findAllNotDeleted(Pageable pageable);

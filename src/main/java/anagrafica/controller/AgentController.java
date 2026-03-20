@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import anagrafica.dto.agent.AgentConfigurationVoyageResponse;
+import anagrafica.dto.agent.AgentCurrentVoyageExternalResponse;
 import anagrafica.dto.agent.AgentCurrentVoyageResponse;
 import anagrafica.dto.agent.AgentProductResponse;
 import anagrafica.dto.agent.AgentRequest;
 import anagrafica.dto.agent.AgentResponse;
-import anagrafica.dto.ext.ProductResponse;
 import anagrafica.dto.voyage.VoyageCustomerStatusAgentResponse;
 import anagrafica.dto.voyage.VoyageResponse;
 import anagrafica.dto.zone.ZoneResponse;
@@ -86,6 +86,11 @@ public class AgentController {
     @PostMapping(value = "/{id}/current-voyage", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<AgentCurrentVoyageResponse> currentBoyage(@PathVariable("id") Long agentId){
         return ResponseEntity.ok(agentService.currentVoyage(agentId));
+    }
+    
+    @GetMapping(value = "/{id}/current-voyage-external", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<AgentCurrentVoyageExternalResponse> currentVoyageExternal(@PathVariable("id") Long agentId){
+        return ResponseEntity.ok(agentService.currentVoyageExternal(agentId));
     }
     
     @GetMapping(value = "/{id}/current-voyage-customer-zone/{zoneId}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)

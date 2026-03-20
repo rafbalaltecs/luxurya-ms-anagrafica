@@ -1,5 +1,7 @@
 package anagrafica.dto.agent;
 
+import java.util.List;
+
 import lombok.Data;
 
 @Data
@@ -8,5 +10,5 @@ public class AgentRequest {
     private String surname;
     private String telephone;
     private Long userId;
-    private Long zoneId;
+    private List<Long> zoneId;
 }

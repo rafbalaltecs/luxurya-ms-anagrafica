@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import anagrafica.client.ProductClient;
 import anagrafica.dto.agent.AgentConfigurationVoyageResponse;
+import anagrafica.dto.agent.AgentCurrentVoyageExternalResponse;
 import anagrafica.dto.agent.AgentCurrentVoyageResponse;
 import anagrafica.dto.agent.AgentProductResponse;
 import anagrafica.dto.agent.AgentRequest;
@@ -37,6 +38,7 @@ import anagrafica.entity.Zone;
 import anagrafica.entity.ZoneCompany;
 import anagrafica.entity.audit.AgentZoneAudit;
 import anagrafica.entity.audit.OperationAuditEnum;
+import anagrafica.exception.BusinessError;
 import anagrafica.exception.RestException;
 import anagrafica.publisher.AgentZonePublisher;
 import anagrafica.repository.agent.AgentCurrentVoyageRepository;
@@ -130,20 +132,22 @@ public class AgentServiceImpl implements AgentService {
         for(final Agent agent: list){
         	Integer totalCompany = 0;
             final List<AgentZone> agentZones = agentZoneRepository.findAllZonesFromAgentId(agent.getId());
-
+            List<ZoneResponse> zoneResponses = new ArrayList<>();
             ZoneResponse zoneResponse = null;
             if(!agentZones.isEmpty()){
-                zoneResponse = new ZoneResponse();
-                final AgentZone agentZone = agentZones.get(0);
-                if(agentZone.getZone() != null) {
-                	zoneResponse.setId(agentZone.getZone().getId());
-                    zoneResponse.setName(agentZone.getZone() != null ? agentZone.getZone().getName() : null);
-                    zoneResponse.setCity(agentZone.getZone().getCitta() != null ? agentZone.getZone().getCitta().getNome() : null);
-                    
-                    final List<ZoneCompany> listZoneCompany = zoneCompanyRepository.findAllCompanyFromZone(agentZone.getZone().getId());
-                    totalCompany = listZoneCompany.size();
-                }
-                
+            	
+            	for(final AgentZone agentZone: agentZones) {
+            		  zoneResponse = new ZoneResponse();
+                      if(agentZone.getZone() != null) {
+                      	 zoneResponse.setId(agentZone.getZone().getId());
+                         zoneResponse.setName(agentZone.getZone() != null ? agentZone.getZone().getName() : null);
+                         zoneResponse.setCity(agentZone.getZone().getCitta() != null ? agentZone.getZone().getCitta().getNome() : null);
+                          
+	                      final List<ZoneCompany> listZoneCompany = zoneCompanyRepository.findAllCompanyFromZone(agentZone.getZone().getId());
+	                      totalCompany = totalCompany + listZoneCompany.size();
+	                      zoneResponses.add(zoneResponse);
+                      }
+            	}
                 
             }
             
@@ -155,7 +159,8 @@ public class AgentServiceImpl implements AgentService {
                             agent.getTelephone(),
                             zoneResponse,
                             userMapper.entityToResponse(agent.getUser()),
-                            totalCompany
+                            totalCompany,
+                            zoneResponses
                     )
             );
         }
@@ -167,7 +172,7 @@ public class AgentServiceImpl implements AgentService {
     public AgentResponse create(AgentRequest request) {
         final Optional<Agent> optionalAgent = agentRepository.findAgentFromUserId(request.getUserId());
         if(optionalAgent.isPresent()){
-            throw new RestException("This user owns an agent");
+        	throw BusinessError.EXIST_USER_WITH_AGENT.toException();
         }
 
         final Optional<User> optionalUser = userRepository.findById(request.getUserId());
@@ -176,11 +181,6 @@ public class AgentServiceImpl implements AgentService {
             throw new RestException("User Not Found");
         }
 
-        final Optional<Zone> optionalZone = zoneRepository.findById(request.getZoneId());
-
-        if(optionalZone.isEmpty()){
-            throw new RestException("Zone Not Found");
-        }
 
         Agent agent = new Agent();
         agent.setName(request.getName());
@@ -190,22 +190,40 @@ public class AgentServiceImpl implements AgentService {
         agent.setTelephone(request.getTelephone());
 
         agent = agentRepository.save(agent);
+        
+        final List<ZoneResponse> zonesResponse = new ArrayList<>();
+        
+        if(!request.getZoneId().isEmpty()) {
+        	for(final Long zoneId: request.getZoneId()) {
+        		final Optional<Zone> optionalZone = zoneRepository.findById(zoneId);
 
-        addZoneToAgent(agent.getId(), optionalZone.get().getId());
+                if(optionalZone.isEmpty()){
+                    throw new RestException("Zone Not Found");
+                }
 
-        final ZoneResponse zoneResponse = new ZoneResponse();
-        zoneResponse.setCity(optionalZone.get().getCitta().getNome());
-        zoneResponse.setName(optionalZone.get().getName());
-        zoneResponse.setId(optionalZone.get().getId());
+
+                addZoneToAgent(agent.getId(), optionalZone.get().getId());
+
+                final ZoneResponse zoneResponse = new ZoneResponse();
+                zoneResponse.setCity(MethodUtils.getCittaFromZone(optionalZone.get()));
+                zoneResponse.setName(optionalZone.get().getName());
+                zoneResponse.setId(optionalZone.get().getId());
+                zonesResponse.add(zoneResponse);
+        	}
+        	
+        }
+
+
 
         return new AgentResponse(
                 agent.getId(),
                 request.getName(),
                 request.getSurname(),
                 request.getTelephone(),
-                zoneResponse,
+                null,
                 userMapper.entityToResponse(agent.getUser()),
-                null
+                null,
+                zonesResponse
                 );
     }
 
@@ -220,7 +238,7 @@ public class AgentServiceImpl implements AgentService {
         final Optional<Agent> optionalAgentExistUser = agentRepository.findAgentFromUserId(request.getUserId());
         if(optionalAgentExistUser.isPresent()){
             if(!optionalAgentExistUser.get().getId().equals(optionalAgent.get().getId())){
-                throw new RestException("This user owns an agent");
+            	throw BusinessError.EXIST_USER_WITH_AGENT.toException();
             }
         }
 
@@ -229,34 +247,46 @@ public class AgentServiceImpl implements AgentService {
         if(optionalUser.isEmpty()){
             throw new RestException("User Not Found");
         }
-
-        final Optional<Zone> optionalZone = zoneRepository.findById(request.getZoneId());
-
-        if(optionalZone.isEmpty()){
-            throw new RestException("Zone Not Found");
-        }
-
+        
         optionalAgent.get().setName(request.getName());
         optionalAgent.get().setSurname(request.getSurname());
         optionalAgent.get().setUpdatedBy(jwtUtil.getIdProfileLogged().toString());
         optionalAgent.get().setTelephone(request.getTelephone());
         agentRepository.save(optionalAgent.get());
+        
+        final List<ZoneResponse> zonesResponse = new ArrayList<>();
+        
+        if(!request.getZoneId().isEmpty()) {
+        	for(final Long zoneId: request.getZoneId()) {
+        		final Optional<Zone> optionalZone = zoneRepository.findById(zoneId);
 
-        addZoneToAgent(optionalAgent.get().getId(), optionalZone.get().getId());
+                if(optionalZone.isEmpty()){
+                    throw new RestException("Zone Not Found");
+                }
 
-        final ZoneResponse zoneResponse = new ZoneResponse();
-        zoneResponse.setCity(optionalZone.get().getCitta().getNome());
-        zoneResponse.setName(optionalZone.get().getName());
-        zoneResponse.setId(optionalZone.get().getId());
+
+                addZoneToAgent(optionalAgent.get().getId(), optionalZone.get().getId());
+
+                final ZoneResponse zoneResponse = new ZoneResponse();
+                zoneResponse.setCity(MethodUtils.getCittaFromZone(optionalZone.get()));
+                zoneResponse.setName(optionalZone.get().getName());
+                zoneResponse.setId(optionalZone.get().getId());
+                zonesResponse.add(zoneResponse);
+        	}
+        	
+        }
+
+        
 
         return new AgentResponse(
                 optionalAgent.get().getId(),
                 request.getName(),
                 request.getSurname(),
                 request.getTelephone(),
-                zoneResponse,
+                null,
                 userMapper.entityToResponse(optionalAgent.get().getUser()),
-                null
+                null,
+                zonesResponse
         );
     }
 
@@ -300,7 +330,7 @@ public class AgentServiceImpl implements AgentService {
         for(final AgentZone agentZone: agentZones){
             final ZoneResponse zoneResponse = new ZoneResponse();
             zoneResponse.setId(agentZone.getZone().getId());
-            zoneResponse.setCity(agentZone.getZone().getCitta() != null ? agentZone.getZone().getCitta().getNome() : "N/A");
+            zoneResponse.setCity(MethodUtils.getCittaFromZone(agentZone.getZone()));
             zoneResponse.setName(agentZone.getZone().getName());
             zoneResponses.add(zoneResponse);
         }
@@ -338,33 +368,35 @@ public class AgentServiceImpl implements AgentService {
 
         if(optionalAgentZone.isPresent()){
             log.warn("Exist This Associate With Agent ID: {} And Zone: {} ", optionalAgent.get().getId(), optionalZone.get().getName());
-            throw new RestException("Exist This Associate");
+            //throw new RestException("Exist This Associate");
+        }else {
+        	 final List<AgentZone> agentZoneList = agentZoneRepository.findAllZoneWithIdZoneAndAgents(idZone);
+
+             if(!agentZoneList.isEmpty()){
+                 for(final AgentZone agentZoneItem: agentZoneList){
+                     agentZoneItem.setDeleted(Boolean.TRUE);
+                     agentZoneRepository.save(agentZoneItem);
+                 }
+                 publishRevokeAllZone(agentZoneList);
+             }
+
+             final AgentZone agentZone = new AgentZone();
+             agentZone.setZone(optionalZone.get());
+             agentZone.setAgent(optionalAgent.get());
+             agentZone.setIsActive(Boolean.TRUE);
+             agentZone.setDeleted(Boolean.FALSE);
+             agentZoneRepository.save(agentZone);
+
+             final AgentZoneEventDTO audit = new AgentZoneEventDTO();
+             audit.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
+             audit.setOperationDate(LocalDateTime.now().toString());
+             audit.setOperationAudit(OperationAuditEnum.ADD.name());
+             audit.setZoneId(String.valueOf(agentZone.getZone().getId()));
+             audit.setAgentId(String.valueOf(agentZone.getAgent().getId()));
+             agentZonePublisher.publish(audit);
         }
 
-        final List<AgentZone> agentZoneList = agentZoneRepository.findAllZoneWithIdZoneAndAgents(idZone);
-
-        if(!agentZoneList.isEmpty()){
-            for(final AgentZone agentZoneItem: agentZoneList){
-                agentZoneItem.setDeleted(Boolean.TRUE);
-                agentZoneRepository.save(agentZoneItem);
-            }
-            publishRevokeAllZone(agentZoneList);
-        }
-
-        final AgentZone agentZone = new AgentZone();
-        agentZone.setZone(optionalZone.get());
-        agentZone.setAgent(optionalAgent.get());
-        agentZone.setIsActive(Boolean.TRUE);
-        agentZone.setDeleted(Boolean.FALSE);
-        agentZoneRepository.save(agentZone);
-
-        final AgentZoneEventDTO audit = new AgentZoneEventDTO();
-        audit.setOperationBy(String.valueOf(jwtUtil.getIdProfileLogged()));
-        audit.setOperationDate(LocalDateTime.now().toString());
-        audit.setOperationAudit(OperationAuditEnum.ADD.name());
-        audit.setZoneId(String.valueOf(agentZone.getZone().getId()));
-        audit.setAgentId(String.valueOf(agentZone.getAgent().getId()));
-        agentZonePublisher.publish(audit);
+       
 
     }
 
@@ -567,7 +599,7 @@ public class AgentServiceImpl implements AgentService {
 		
 		final List<ConfigurationVoyage> findConfigurationVoyages = configurationVoyageRepository.findAllConfigurationVoyageFromAgentIdAndWeek(idAgent, currentVoyage.getVoyageNumber());
 		if(findConfigurationVoyages.isEmpty()) {
-			throw new RestException("Not Exist Configuration Voyage For This Agent"); 
+			throw BusinessError.NOT_EXIST_VOYAGE_FOR_THIS_AGENT.toException();
 		}
 		final ConfigurationVoyage configurationVoyage = MethodUtils.firstElement(findConfigurationVoyages);
 		
@@ -576,7 +608,8 @@ public class AgentServiceImpl implements AgentService {
 		final AgentCurrentVoyageResponse response = new AgentCurrentVoyageResponse();
 		response.setZones(new ArrayList<ZoneResponse>());
 		
-		response.setCurrentVoyage(currentVoyage.getVoyageNumber());
+		response.setCurrentVoyage(configurationVoyage.getId().intValue());
+		response.setCurrentWeek(configurationVoyage.getWeek());
 		response.setId(currentVoyage.getId());
 		
 		final List<ConfigurationVoyageZone> configurationVoyageZones = configurationVoyageZoneRepository.findAllConfigurationVoyageZoneConfVoyageId(configurationVoyage.getId());
@@ -599,21 +632,6 @@ public class AgentServiceImpl implements AgentService {
 			createVoyage(optionalAgent.get(), zoneList);
 		}
 		
-		//GESTIONE CLIENTI EXTRA VIAGGI
-		final Voyage voyage = MethodUtils.firstElement(findAllvoyage);
-		final List<VoyageCompany> findExternalVoyageCompany = voyageCompanyRepository.findAllVoyageCompanyFromVoyageIdAndExternal(voyage.getId());
-		if(!findExternalVoyageCompany.isEmpty()) {
-			for(final VoyageCompany vce: findExternalVoyageCompany) {
-				final List<ZoneCompany> zonesCompany = zoneCompanyRepository.findZoneFromCompany(vce.getCompany().getId());
-				if(!zonesCompany.isEmpty()) {
-					final ZoneCompany zoneCompany = MethodUtils.firstElement(zonesCompany);
-					final String city = zoneCompany.getZone().getCitta() != null ? zoneCompany.getZone().getCitta().getNome() : "N/A";
-					response.getZones().add(
-							new ZoneResponse(zoneCompany.getZone().getId(), zoneCompany.getZone().getName(),city)
-							);
-				}
-			}
-		}
 		return response;
 	}
 
@@ -673,6 +691,7 @@ public class AgentServiceImpl implements AgentService {
 		final List<AgentProductResponse> response = new ArrayList<AgentProductResponse>();
 
 		//TODO: Qui non deve tornare i prodotti cosi ma quelli caricati durante il carico dal magazzino
+		// Teoricamente li abbiamo caricati in base al sistema magazzino esterno di Luxurya
 		
 		final List<ProductResponse> productsFromClient = productClient.getProducts();
 		
@@ -805,6 +824,82 @@ public class AgentServiceImpl implements AgentService {
 		
 		return voyageCustomerStatusAgentResponse;
 		
+	}
+	
+	private List<CompanyStockResponse> getStockFromCompanyId(final Long idCompany){
+		final List<CompanyStockResponse> stockCompany = new ArrayList<CompanyStockResponse>();
+		final List<CompanyStock> stockEntity = companyStockRepository.findAllStockFromCompanyId(idCompany);
+		if(!stockEntity.isEmpty()) {
+			for(final CompanyStock c: stockEntity) {
+				final CompanyStockResponse companyStockResponse = new CompanyStockResponse();
+				companyStockResponse.setCompanyId(c.getCompany().getId());
+				final ProductResponse productResponse = productClient.getProductInfo(c.getProductIdExt());
+				companyStockResponse.setProductCode(productResponse.getCode());
+				companyStockResponse.setProductName(productResponse.getName());
+				companyStockResponse.setQuantity(c.getQuantity());
+				stockCompany.add(companyStockResponse);
+				}
+		}
+		return stockCompany;
+	}
+	
+	private CompanyAddress findAddressFromCompanyId(final Long idCompany) {
+		final List<CompanyAddress> addresses = companyAddressRepository.findAllCompanyAddressFromCompanyId(idCompany);
+		if(addresses.isEmpty()) {
+			return null;
+		}
+		return MethodUtils.firstElement(addresses);
+	}
+
+
+
+	@Override
+	public AgentCurrentVoyageExternalResponse currentVoyageExternal(Long idAgent) {
+		
+		final List<AgentCurrentVoyage> findCurrentVoyages = agentCurrentVoyageRepository.findCurrentVoyageFromAgentId(idAgent);
+		if(findCurrentVoyages.isEmpty()) {
+			throw new RestException("Not Exist Current Voyage For This Agent"); 
+		}
+		
+		final AgentCurrentVoyage currentVoyage = MethodUtils.firstElement(findCurrentVoyages);
+		
+		final List<Voyage> findAllvoyage = voyageRepository.findPresentVoyageFromAgentId(idAgent);
+		
+		final AgentCurrentVoyageExternalResponse response = new AgentCurrentVoyageExternalResponse();
+		response.setCurrentVoyage(currentVoyage.getVoyageNumber());
+			
+		response.setCustomers(new ArrayList<>());
+		
+		final Voyage voyage = MethodUtils.firstElement(findAllvoyage);
+		response.setIdVoyage(voyage.getId());
+		response.setCodeVoyage(voyage.getCode());	
+		final List<VoyageCompany> findExternalVoyageCompany = voyageCompanyRepository.findAllVoyageCompanyFromVoyageIdAndExternal(voyage.getId());
+		if(!findExternalVoyageCompany.isEmpty()) {
+			for(final VoyageCompany vce: findExternalVoyageCompany) {
+				final List<ZoneCompany> zonesCompany = zoneCompanyRepository.findZoneFromCompany(vce.getCompany().getId());
+				if(!zonesCompany.isEmpty()) {
+					final VoyageClientResponse item = new VoyageClientResponse();
+					final ZoneCompany zoneCompany = MethodUtils.firstElement(zonesCompany);
+					final ZoneResponse zoneDTO = new ZoneResponse(zoneCompany.getZone().getId(), zoneCompany.getZone().getName(), MethodUtils.getCittaFromZone(zoneCompany.getZone()));
+					item.setClientId(vce.getCompany().getId());
+					item.setClientName(vce.getCompany().getName());
+					item.setTelephone(vce.getCompany().getTelephone());
+					item.setZoneName(zoneDTO.getName());
+					item.setPiva(vce.getCompany().getPiva());
+					item.setVoyageId(vce.getVoyage().getId());
+					item.setVisitCarriedOut(Boolean.FALSE);
+					item.setStocks(getStockFromCompanyId(vce.getCompany().getId()));
+					
+					final CompanyAddress companyAddress = findAddressFromCompanyId(vce.getCompany().getId());
+					item.setAddress(companyAddress != null ? companyAddress.getAddress().getAddress() : "N/A");
+					item.setLat(companyAddress != null ? companyAddress.getLat() : null);
+					item.setLon(companyAddress != null ? companyAddress.getLon() : null);
+					item.setTotal(1);
+					response.getCustomers().add(item);
+				}
+			}
+		}
+		return response;
 	}
 
 
