@@ -48,13 +48,9 @@ public interface VoyageService {
 	List<TypePaymentResponse> findAllTypePayment();
 	List<TypeDocumentVoyageResponse> findAllDocuments();
 	
-<<<<<<< HEAD
 	void addDocumentToVoyage(final Long voyageId, final Long documentId, final Long typeDocumentVoyage);
-=======
 	List<AgentConfigurationVoyageResponse> generateGeoZones(final VoyageGeoRequest request);
 	
 	List<AgentConfigurationVoyageResponse> generateGeoZones(final VoyageGeoRequest request, final Boolean persistence);
 	void changeConfigurationVoyage(final VoyageConfigurationRequest request);
-	
->>>>>>> 3d94d6e872c0e01f7a595079a94e92c1f6b5b9f4
 }
