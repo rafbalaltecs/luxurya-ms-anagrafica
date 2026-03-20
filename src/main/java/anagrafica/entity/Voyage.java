@@ -40,5 +40,6 @@ public class Voyage extends AuditableEntityExt{
     private Boolean isFinished;
     @Column(name = "Code")
     private String code;
-	
+    @Column(name = "LicensePlate")
+    private String licensePlate;
 }

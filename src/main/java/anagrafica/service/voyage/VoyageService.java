@@ -42,4 +42,6 @@ public interface VoyageService {
 	
 	List<TypePaymentResponse> findAllTypePayment();
 	List<TypeDocumentVoyageResponse> findAllDocuments();
+	
+	void addDocumentToVoyage(final Long voyageId, final Long documentId, final Long typeDocumentVoyage);
 }

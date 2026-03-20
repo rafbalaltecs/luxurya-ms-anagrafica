@@ -32,12 +32,14 @@ import anagrafica.entity.CompanyAddress;
 import anagrafica.entity.CompanyStock;
 import anagrafica.entity.ConfigurationVoyage;
 import anagrafica.entity.ConfigurationVoyageZone;
+import anagrafica.entity.Document;
 import anagrafica.entity.TypeDocumentVoyage;
 import anagrafica.entity.TypePayment;
 import anagrafica.entity.TypeVoyageOperation;
 import anagrafica.entity.Voyage;
 import anagrafica.entity.VoyageCompany;
 import anagrafica.entity.VoyageCompanyOperation;
+import anagrafica.entity.VoyageDocument;
 import anagrafica.entity.Zone;
 import anagrafica.entity.ZoneCompany;
 import anagrafica.exception.BusinessError;
@@ -49,10 +51,12 @@ import anagrafica.repository.company.CompanyStockRepository;
 import anagrafica.repository.payment.TypePaymentRepository;
 import anagrafica.repository.voyage.ConfigurationVoyageRepository;
 import anagrafica.repository.voyage.ConfigurationVoyageZoneRepository;
+import anagrafica.repository.voyage.DocumentRepository;
 import anagrafica.repository.voyage.TypeDocumentVoyageRepository;
 import anagrafica.repository.voyage.TypeVoyageOperationRepository;
 import anagrafica.repository.voyage.VoyageCompanyOperationRepository;
 import anagrafica.repository.voyage.VoyageCompanyRepository;
+import anagrafica.repository.voyage.VoyageDocumentRepository;
 import anagrafica.repository.voyage.VoyageRepository;
 import anagrafica.repository.voyage.VoyageUtilRepo;
 import anagrafica.repository.zone.ZoneCompanyRepository;
@@ -87,6 +91,8 @@ public class VoyageServiceImpl implements VoyageService{
 	private final TypePaymentRepository typePaymentRepository;
 	private final TypeDocumentVoyageRepository typeDocumentVoyageRepository;
 	private final CompanyRepository companyRepository;
+	private final VoyageDocumentRepository voyageDocumentRepository;
+	private final DocumentRepository documentRepository;
 	
 	public VoyageServiceImpl(VoyageRepository voyageRepository, 
 			VoyageMapper voyageMapper, 
@@ -105,7 +111,9 @@ public class VoyageServiceImpl implements VoyageService{
 			ConfigurationVoyageZoneRepository configurationVoyageZoneRepository,
 			TypePaymentRepository typePaymentRepository,
 			TypeDocumentVoyageRepository typeDocumentVoyageRepository,
-			CompanyRepository companyRepository) {
+			CompanyRepository companyRepository,
+			VoyageDocumentRepository voyageDocumentRepository,
+			DocumentRepository documentRepository) {
 		this.voyageRepository = voyageRepository;
 		this.voyageMapper = voyageMapper;
 		this.zoneCompanyRepository = zoneCompanyRepository;
@@ -124,6 +132,8 @@ public class VoyageServiceImpl implements VoyageService{
 		this.typePaymentRepository = typePaymentRepository;
 		this.typeDocumentVoyageRepository = typeDocumentVoyageRepository;
 		this.companyRepository = companyRepository;
+		this.voyageDocumentRepository = voyageDocumentRepository;
+		this.documentRepository = documentRepository;
 	}
 
 	@Override
@@ -878,6 +888,30 @@ public class VoyageServiceImpl implements VoyageService{
 	private Agent getAgent() {
 		final Optional<Agent> optionalAgent = agentRepository.findAgentFromUserId(jwtUtil.getIdProfileLogged());
 		return optionalAgent.isPresent() ? optionalAgent.get(): null;
+	}
+
+	@Override
+	@Transactional
+	public void addDocumentToVoyage(Long voyageId, Long documentId, Long typeDocumentVoyage) {
+		final Optional<Voyage> optionalVoyage = voyageRepository.findById(voyageId);
+		if(optionalVoyage.isEmpty()) {
+			throw BusinessError.NOT_EXIST_ENTITY.toExceptionEntity("Voyage");
+		}
+		final Optional<Document> optionalDocument = documentRepository.findByIdNotDeleted(documentId);
+		if(optionalDocument.isEmpty()) {
+			throw BusinessError.NOT_EXIST_ENTITY.toExceptionEntity("Document");
+		}
+		final Optional<TypeDocumentVoyage> optionalTypeDocumentVoyage = typeDocumentVoyageRepository.findById(typeDocumentVoyage);
+		if(optionalTypeDocumentVoyage.isEmpty()) {
+			throw BusinessError.NOT_EXIST_ENTITY.toExceptionEntity("TypeDocumentVoyage");
+		}
+		
+		final VoyageDocument voyageDocument = new VoyageDocument();
+		voyageDocument.setTypeDocument(optionalTypeDocumentVoyage.get());
+		voyageDocument.setVoyage(optionalVoyage.get());
+		voyageDocument.setDocument(optionalDocument.get());
+		voyageDocument.setCreatedBy(jwtUtil.getUsernameLogged());
+		voyageDocumentRepository.save(voyageDocument);
 	}
 	
 
