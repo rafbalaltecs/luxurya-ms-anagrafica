@@ -8,7 +8,7 @@ spring:
 
   # --- CONFIGURAZIONE POSTGRES ---
   datasource:
-    url: jdbc:postgresql://16.16.115.211:5432/mydb
+    url: jdbc:postgresql://16.16.115.211:5432/mydb?characterEncoding=UTF-8&useUnicode=true
     username: postgre
     password: postgres
     driver-class-name: org.postgresql.Driver

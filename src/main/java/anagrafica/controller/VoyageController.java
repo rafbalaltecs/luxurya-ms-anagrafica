@@ -13,12 +13,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import anagrafica.dto.agent.AgentConfigurationVoyageResponse;
 import anagrafica.dto.typedocument.TypeDocumentVoyageResponse;
 import anagrafica.dto.typepayment.TypePaymentResponse;
 import anagrafica.dto.voyage.VoyageClientResponse;
 import anagrafica.dto.voyage.VoyageCompanyResponse;
 import anagrafica.dto.voyage.VoyageConfigurationRequest;
+import anagrafica.dto.voyage.VoyageCustomerFromZoneResponse;
 import anagrafica.dto.voyage.VoyageCustomerStatusAgentResponse;
+import anagrafica.dto.voyage.VoyageGeoRequest;
 import anagrafica.dto.voyage.VoyageOperationCompletedRequest;
 import anagrafica.dto.voyage.VoyageOperationRemoveRequest;
 import anagrafica.dto.voyage.VoyageOperationRequest;
@@ -68,6 +71,11 @@ public class VoyageController {
 		return ResponseEntity.ok(voyageService.customerVisitFromVoyageId(id));
 	}
 	
+	@GetMapping(value = "/customer-to-visit", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public ResponseEntity<VoyageCustomerFromZoneResponse> findCustomersToVisit(){
+		return ResponseEntity.ok(voyageService.customerToVisitFromCurrentVoyage());
+	}
+	
 	@PostMapping(value ="/operation", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public void voyageOperationSave(@RequestBody final VoyageOperationRequest request) {
 		voyageService.voyageOperation(request);
@@ -76,6 +84,24 @@ public class VoyageController {
 	@PostMapping(value ="/configuration", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public void voyageConfiguration(@RequestBody final VoyageConfigurationRequest request) {
 		voyageService.createConfigurationVoyage(request);
+	}
+	
+	@PutMapping(value ="/configuration-modify", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public void changeConfigurationVoyage(
+			@RequestBody final VoyageConfigurationRequest request
+			) {
+		voyageService.changeConfigurationVoyage(request);
+	}
+	
+	@PostMapping(value ="/configuration/geo", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public ResponseEntity<List<AgentConfigurationVoyageResponse>> voyageConfigurationgeo(
+			@RequestBody final VoyageGeoRequest request,
+			@RequestParam(name = "save", required = false) Boolean save) {
+			if(save != null && save.equals(Boolean.TRUE)) {
+				return ResponseEntity.ok(voyageService.generateGeoZones(request, save));
+			}else {
+				return ResponseEntity.ok(voyageService.generateGeoZones(request));
+			}
 	}
 	
 	@PutMapping(value ="/configuration/{id}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)

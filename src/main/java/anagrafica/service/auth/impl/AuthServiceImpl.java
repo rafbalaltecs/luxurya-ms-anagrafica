@@ -2,24 +2,33 @@ package anagrafica.service.auth.impl;
 
 import anagrafica.dto.auth.LoginRequest;
 import anagrafica.dto.auth.LoginResponse;
+import anagrafica.dto.auth.LoginTokenRequest;
 import anagrafica.dto.event.LoginEventDTO;
 import anagrafica.dto.shared.UserDataShared;
 import anagrafica.entity.Agent;
+import anagrafica.entity.ExternalSystem;
 import anagrafica.entity.User;
+import anagrafica.exception.BusinessError;
 import anagrafica.exception.RestException;
 import anagrafica.publisher.LoginPublisher;
 import anagrafica.repository.agent.AgentRepository;
+import anagrafica.repository.externalsystem.ExternalSystemRepository;
 import anagrafica.repository.user.UserRepository;
 import anagrafica.service.auth.AuthService;
 import anagrafica.service.cache.RedisService;
 import anagrafica.utils.JwtUtil;
+import anagrafica.utils.MethodUtils;
 import anagrafica.utils.PasswordUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -38,14 +47,22 @@ public class AuthServiceImpl implements AuthService {
 
     private final LoginPublisher loginPublisher;
     private final AgentRepository agentRepository;
+    private final ExternalSystemRepository externalSystemRepository;
 
-    public AuthServiceImpl(JwtUtil jwtUtil, RedisService redisService, UserRepository userRepository, AuthMapper authMapper, LoginPublisher loginPublisher, AgentRepository agentRepository) {
+    public AuthServiceImpl(JwtUtil jwtUtil, RedisService redisService, 
+    		UserRepository userRepository, 
+    		AuthMapper authMapper, 
+    		LoginPublisher loginPublisher, 
+    		AgentRepository agentRepository,
+    		ExternalSystemRepository externalSystemRepository,
+    		ObjectMapper objectMapper) {
         this.jwtUtil = jwtUtil;
         this.redisService = redisService;
         this.userRepository = userRepository;
         this.authMapper = authMapper;
         this.loginPublisher = loginPublisher;
         this.agentRepository = agentRepository;
+        this.externalSystemRepository = externalSystemRepository;
     }
 
     @Override
@@ -118,4 +135,46 @@ public class AuthServiceImpl implements AuthService {
     public String encodePassword(String pwd) {
         return PasswordUtils.encodePassword(pwd);
     }
+
+	@Override
+	public LoginResponse loginWithToken(LoginTokenRequest request) {
+		final Optional<User> optionalUser = userRepository.findByAuthToken(request.getToken());
+		if(optionalUser.isEmpty()) {
+			throw BusinessError.INVALID_AUTH_TOKEN.toExceptionEntity(request.getToken());
+		}
+		
+		final List<ExternalSystem> findAllExternalSystem = externalSystemRepository.findByUserId(optionalUser.get().getId());
+		if(findAllExternalSystem.isEmpty()) {
+			throw BusinessError.INVALID_EXT_SYSTEM_USER.toException();
+		}
+		
+		final ExternalSystem externalSystem = MethodUtils.firstElement(findAllExternalSystem);
+		
+		if(!externalSystem.getIsEnabled()) {
+			throw BusinessError.EXTERNAL_SYSYEM_NOT_ENABLED.toException();
+		}
+		
+		final LoginResponse authResponse = new LoginResponse();
+		 
+		final Map<String, Object> claims = new HashMap<>();
+		claims.put("isExternalSystem", Boolean.TRUE);
+		claims.put("username", optionalUser.get().getTokenAuth());
+		claims.put("externalSystem", externalSystem.getName());
+		claims.put("iduser", optionalUser.get().getId());
+		
+		authResponse.setUser(authMapper.entityToResponse(optionalUser.get()));
+		authResponse.setToken(jwtUtil.generateToken(optionalUser.get().getTokenAuth(), claims));
+		
+		authResponse.getUser().setSystem("EXT_SYSTEM");
+		authResponse.setName(externalSystem.getName());
+		
+		final UserDataShared userDataShared = authMapper.getUserDataShared(optionalUser.get(), authResponse.getToken());
+	    userDataShared.setRoutes(authResponse.getUser().getRoutes());
+
+	    redisService.saveUserData(authResponse.getToken(), userDataShared);
+	    
+		return authResponse;
+	}
+	
+	
 }

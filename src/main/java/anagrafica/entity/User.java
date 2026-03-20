@@ -28,4 +28,6 @@ public class User extends AuditableEntity{
     private Boolean isDisabled;
     @Column(name = "IsDeleted")
     private Boolean isDeleted;
+    @Column(name = "TokenAuth")
+    private String tokenAuth;
 }

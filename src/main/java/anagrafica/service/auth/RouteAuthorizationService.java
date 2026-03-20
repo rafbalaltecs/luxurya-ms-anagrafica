@@ -14,7 +14,7 @@ public class RouteAuthorizationService {
     public boolean isAllowed(String path, Set<String> routes, String username) {
 
         if (routes == null || routes.isEmpty()) {
-            return false;
+            return true;
         }
 
         for (String routePattern : routes) {

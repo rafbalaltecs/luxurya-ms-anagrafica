@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import anagrafica.entity.TypeVoyageOperation;
+import anagrafica.entity.Zone;
 
 public class MethodUtils {
     public static boolean isPartitaIvaValida(String piva) {
@@ -59,6 +60,14 @@ public class MethodUtils {
 
         int daysUntilFriday = DayOfWeek.FRIDAY.getValue() - day.getValue();
         return startDate.plusDays(daysUntilFriday);
+    }
+    
+    public static String getCittaFromZone(final Zone zone) {
+    	if(zone != null) {
+    		final String city = zone.getCitta() != null ? zone.getCitta().getNome() : "N/A";
+    		return city;
+    	}
+    	return "N/A";
     }
     
     

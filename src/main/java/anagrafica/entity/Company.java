@@ -32,4 +32,7 @@ public class Company extends AuditableEntityExt {
     private String telephone;
     @Column(name = "CodeLegacy")
     private String codeLegacy;
+    @ManyToOne
+    @JoinColumn(name = "TypeCompanyId")
+    private TypeCompany type;
 }

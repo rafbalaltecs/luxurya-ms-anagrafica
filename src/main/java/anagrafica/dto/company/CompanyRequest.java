@@ -14,4 +14,5 @@ public class CompanyRequest {
     private String mobile;
     private Long agentId;
     private String codeLegacy;
+    private Long typeId;
 }

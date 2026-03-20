@@ -25,6 +25,7 @@ public class JwtUtil {
 
     private Boolean isGuest;
     private Boolean isAdmin;
+    private Boolean isExternalSystem;
 
     public JwtUtil(@Value("${app.jwt.secret}") String secret,
                    @Value("${app.jwt.expiration-ms}") long expirationMs) {
@@ -36,8 +37,16 @@ public class JwtUtil {
         this.usernameLogged = usernameLogged;
     }
 
+    private void setIsExternalSystem(final Boolean value) {
+    	this.isExternalSystem = value;
+    }
+    
     public String getUsernameLogged() {
         return usernameLogged;
+    }
+    
+    public Boolean isExternalSystem() {
+        return isExternalSystem;
     }
     
     public String getToken() {
@@ -124,6 +133,9 @@ public class JwtUtil {
             setUsernameLogged((String) claims.getBody().get("username"));
             setIdProfileLogged(Long.valueOf( (Integer) claims.getBody().get("iduser") ));
             setIsAdmin((Boolean) claims.getBody().get("isAdmin"));
+            if(claims.getBody().get("isExternalSystem") != null) {
+                setIsExternalSystem((Boolean) claims.getBody().get("isExternalSystem"));
+            }
             setCompactRoutes((String) claims.getBody().get("routes"));
             setToken(token);
         } catch (JwtException ex) {

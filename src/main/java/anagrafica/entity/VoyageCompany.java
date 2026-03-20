@@ -33,7 +33,7 @@ public class VoyageCompany extends AuditableEntityExt{
     @JoinColumn(name = "AgentId")
 	private Agent agent;
 	@Column(name = "IsCompleted")
-	private Boolean isCompleted;
+	private Boolean isCompleted = false;
 	@ManyToOne
     @JoinColumn(name = "TypePaymentId")
 	private TypePayment typePayment;
@@ -41,13 +41,13 @@ public class VoyageCompany extends AuditableEntityExt{
     @JoinColumn(name = "TypeDocumentVoyageId")
 	private TypeDocumentVoyage typeDocumentVoyage;
 	@Column(name = "IsShipping")
-	private Boolean isShipping;
+	private Boolean isShipping = false;
 	@Column(name = "IsBusinessClosure")
-	private Boolean isBusinessClosure;
+	private Boolean isBusinessClosure = false;
 	@Column(name = "IsTravel")
-	private Boolean isTravel;
+	private Boolean isTravel = false;
 	@Column(name = "IsTotalPickup")
-	private Boolean isTotalPickup;
+	private Boolean isTotalPickup = false;
 	@Column(name = "IsExternal")
-	private Boolean isExternal;
+	private Boolean isExternal = false;
 }

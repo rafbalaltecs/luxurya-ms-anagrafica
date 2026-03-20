@@ -11,6 +11,7 @@ import anagrafica.dto.company.CompanyMovementInner;
 import anagrafica.dto.company.CompanyRequest;
 import anagrafica.dto.company.CompanyResponse;
 import anagrafica.dto.company.CompanyStockResponse;
+import anagrafica.dto.company.CompanyTypeResponse;
 import anagrafica.dto.ext.ProductResponse;
 import anagrafica.dto.zone.ZoneResponse;
 import anagrafica.entity.*;
@@ -21,6 +22,7 @@ import anagrafica.repository.agent.AgentZoneRepository;
 import anagrafica.repository.company.CompanyAddressRepository;
 import anagrafica.repository.company.CompanyRepository;
 import anagrafica.repository.company.CompanyStockRepository;
+import anagrafica.repository.company.TypeCompanyRepository;
 import anagrafica.repository.geography.CittaRepository;
 import anagrafica.repository.voyage.VoyageCompanyOperationRepository;
 import anagrafica.repository.voyage.VoyageCompanyRepository;
@@ -65,6 +67,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final ProductClient productClient;
     private final VoyageCompanyRepository voyageCompanyRepository;
     private final VoyageCompanyOperationRepository voyageCompanyOperationRepository;
+    private final TypeCompanyRepository typeCompanyRepository;
 
     public CompanyServiceImpl(CompanyRepository companyRepository, 
     		CompanyExecusClient client, 
@@ -82,7 +85,8 @@ public class CompanyServiceImpl implements CompanyService {
     		CompanyStockRepository companyStockRepository, 
     		ProductClient productClient,
     		VoyageCompanyRepository voyageCompanyRepository,
-    		VoyageCompanyOperationRepository voyageCompanyOperationRepository) {
+    		VoyageCompanyOperationRepository voyageCompanyOperationRepository,
+    		TypeCompanyRepository typeCompanyRepository) {
         this.companyRepository = companyRepository;
         this.client = client;
         this.cittaRepository = cittaRepository;
@@ -100,15 +104,24 @@ public class CompanyServiceImpl implements CompanyService {
         this.productClient = productClient;
         this.voyageCompanyRepository = voyageCompanyRepository;
         this.voyageCompanyOperationRepository = voyageCompanyOperationRepository;
+        this.typeCompanyRepository = typeCompanyRepository;
     }
 
     @Override
     @Transactional
     public CompanyResponse create(CompanyRequest request) {
 
-        if(!MethodUtils.isPartitaIvaValida(request.getPiva())){
-            throw new RestException("Piva is Not Valid");
+        final Optional<TypeCompany> optionalTypeCompany = typeCompanyRepository.findById(request.getTypeId());
+        if(optionalTypeCompany.isEmpty()) {
+        	 throw new RestException("TypeCompany Not Found");
         }
+        
+        if(!optionalTypeCompany.get().getCode().equals("PRIVATO")) {
+        	 if(!MethodUtils.isPartitaIvaValida(request.getPiva())){
+                 throw new RestException("Piva is Not Valid");
+             }
+        }
+        
 
         final Optional<Company> optionalCompanyWithPiva = companyRepository.findCompanyWithSamePiva(request.getPiva().trim());
         final Optional<Company> optionalCompanyWithSameName = companyRepository.findCompanyWithSameName(request.getName().trim());
@@ -125,6 +138,10 @@ public class CompanyServiceImpl implements CompanyService {
         if(request.getAddress() == null){
             throw new RestException("Address is Mandatory");
         }
+        
+        if(request.getAddress().getZoneId() == null) {
+        	 throw new RestException("Zone is Mandatory");
+        }
 
         final Optional<Zone> optionalZone = zoneRepository.findById(request.getAddress().getZoneId());
 
@@ -138,14 +155,14 @@ public class CompanyServiceImpl implements CompanyService {
             throw new RestException("Agent Not Found");
         }
 
-
+/*
         AgentZone agentZone = agentZoneRepository
                 .findAllZonesFromAgentId(optionalAgent.get().getId())
                 .stream()
                 .filter(az -> az.getZone().getId().equals(optionalZone.get().getId()))
                 .findFirst()
                 .orElseThrow(() -> new RestException("Zona non trovata per l'agente selezionato"));
-
+*/
         
         Company company = new Company();
         try{
@@ -171,6 +188,7 @@ public class CompanyServiceImpl implements CompanyService {
         company.setCode("C-" + company.getId().toString());
         company.setDeleted(Boolean.FALSE);
         company.setTelephone(request.getTelephone());
+        company.setType(optionalTypeCompany.get());
         companyRepository.save(company);
 
 
@@ -215,16 +233,25 @@ public class CompanyServiceImpl implements CompanyService {
                 request.getTelephone(),
                 company.getPiva(),
                 addressMapper.toResponse(address),
-                agentMapper.toResponseLight(optionalAgent.get())
+                agentMapper.toResponseLight(optionalAgent.get()),
+                company.getType() != null ? company.getType().getId() : null,
+        		company.getType() != null ? company.getType().getName() : null		
         );
     }
 
     @Override
     @Transactional
     public CompanyResponse update(Long id, CompanyRequest request) {
+    	
+    	final Optional<TypeCompany> optionalTypeCompany = typeCompanyRepository.findById(request.getTypeId());
+        if(optionalTypeCompany.isEmpty()) {
+        	 throw new RestException("TypeCompany Not Found");
+        }
 
-        if(!MethodUtils.isPartitaIvaValida(request.getPiva())){
-            throw new RestException("Piva is Not Valid");
+    	 if(!optionalTypeCompany.get().getCode().equals("PRIVATO")) {
+        	 if(!MethodUtils.isPartitaIvaValida(request.getPiva())){
+                 throw new RestException("Piva is Not Valid");
+             }
         }
 
         final Optional<Company> optionalCompany = companyRepository.findById(id);
@@ -232,6 +259,7 @@ public class CompanyServiceImpl implements CompanyService {
         if(optionalCompany.isEmpty()){
             throw new RestException("Company Not Exist");
         }
+        
 
         final Optional<Company> optionalCompanyWithPiva = companyRepository.findCompanyWithSamePiva(request.getPiva().trim());
         final Optional<Company> optionalCompanyWithSameName = companyRepository.findCompanyWithSameName(request.getName().trim());
@@ -252,6 +280,10 @@ public class CompanyServiceImpl implements CompanyService {
         if(request.getAddress() == null){
             throw new RestException("Address is Mandatory");
         }
+        
+        if(request.getAddress().getZoneId() == null) {
+       	 throw new RestException("Zone is Mandatory");
+       }
 
         final Optional<Zone> optionalZone = zoneRepository.findById(request.getAddress().getZoneId());
 
@@ -266,14 +298,14 @@ public class CompanyServiceImpl implements CompanyService {
         }
 
 
-        AgentZone agentZone = agentZoneRepository
+       /* AgentZone agentZone = agentZoneRepository
                 .findAllZonesFromAgentId(optionalAgent.get().getId())
                 .stream()
                 .filter(az -> az.getZone().getId().equals(optionalZone.get().getId()))
                 .findFirst()
                 .orElseThrow(() -> new RestException("Zona non trovata per l'agente selezionato"));
 
-        /*if(optionalCompanyWithCode.isPresent()){
+        if(optionalCompanyWithCode.isPresent()){
             if(!optionalCompanyWithCode.get().getId().equals(optionalCompany.get().getId())) {
                 throw new RestException("Exist Company With Same Code");
             }
@@ -298,6 +330,7 @@ public class CompanyServiceImpl implements CompanyService {
 
         optionalCompany.get().setDescription(request.getDescription());
         optionalCompany.get().setTelephone(request.getTelephone());
+        optionalCompany.get().setType(optionalTypeCompany.get());
 
         companyRepository.save(optionalCompany.get());
 
@@ -354,7 +387,9 @@ public class CompanyServiceImpl implements CompanyService {
                 request.getTelephone(),
                 optionalCompany.get().getPiva(),
                 addressMapper.toResponse(address),
-                agentMapper.toResponseLight(optionalAgent.get())
+                agentMapper.toResponseLight(optionalAgent.get()),
+                optionalCompany.get().getType() != null ? optionalCompany.get().getType().getId() : null,
+        		optionalCompany.get().getType() != null ? optionalCompany.get().getType().getName() : null		
         );
     }
 
@@ -415,7 +450,9 @@ public class CompanyServiceImpl implements CompanyService {
                             company.getTelephone(),
                             company.getPiva(),
                             addressMapper.toResponse(companyAddress != null ? companyAddress.getAddress() : null),
-                            agentMapper.toResponseLight(agentZone != null ? agentZone.getAgent() : null)
+                            agentMapper.toResponseLight(agentZone != null ? agentZone.getAgent() : null),
+                            company.getType() != null ? company.getType().getId() : null,
+                    		company.getType() != null ? company.getType().getName() : null		
                     )
             );
 
@@ -452,6 +489,7 @@ public class CompanyServiceImpl implements CompanyService {
                                         agentZone.getAgent().getSurname(),
                                         null,
                                         zoneResponse,
+                                        null,
                                         null,
                                         null
                                 )
@@ -617,7 +655,9 @@ public class CompanyServiceImpl implements CompanyService {
 	                request.getTelephone(),
 	                company.getPiva(),
 	                addressMapper.toResponse(address),
-	                null
+	                null,
+	                company.getType() != null ? company.getType().getId() : null,
+            		company.getType() != null ? company.getType().getName() : null	
 	        );
 	}
 
@@ -684,5 +724,75 @@ public class CompanyServiceImpl implements CompanyService {
 		}
 		
 		return response;
+	}
+
+	@Override
+	public List<CompanyTypeResponse> findAllType() {
+		final List<TypeCompany> findAll = typeCompanyRepository.findAllNotDeleted();
+		if(findAll.isEmpty()) {
+			return new ArrayList<>();
+		}
+		final List<CompanyTypeResponse> response = new ArrayList<>();
+		for(final TypeCompany item: findAll) {
+			final CompanyTypeResponse itemDTO = new CompanyTypeResponse();
+			itemDTO.setName(item.getName());
+			itemDTO.setId(item.getId());
+			itemDTO.setDescription(item.getDescription());
+			response.add(itemDTO);
+		}
+		return response;
+	}
+
+	@Override
+	public List<CompanyResponse> findAll(Integer offset, Integer limit, String name) {
+		final List<CompanyResponse> responses = new ArrayList<>();
+        final Pageable pageable = PageRequest.of(offset, limit);
+        
+        final Page<Company> companyList = companyRepository.searchAllNotDeleted(name, pageable);
+
+        for(final Company company: companyList){
+
+            CompanyAddress companyAddress = null;
+            ZoneCompany zoneCompany = null;
+            AgentZone agentZone = null;
+
+            final List<CompanyAddress> companyAddressList = companyAddressRepository.findAllCompanyAddressFromCompanyId(company.getId());
+
+            if(!companyAddressList.isEmpty()) {
+                companyAddress = MethodUtils.firstElement(companyAddressList);
+            }
+
+            final List<ZoneCompany> zoneCompanyList = zoneCompanyRepository.findZoneFromCompany(company.getId());
+
+            if(!zoneCompanyList.isEmpty()){
+                zoneCompany = MethodUtils.firstElement(zoneCompanyList);
+
+                final List<AgentZone> findAllAgentZone = agentZoneRepository.findAllZoneWithIdZoneAndAgents(zoneCompany.getZone().getId());
+
+                if(!findAllAgentZone.isEmpty()){
+                    agentZone = MethodUtils.firstElement(findAllAgentZone);
+                }
+            }
+
+            responses.add(
+                    new CompanyResponse(
+                            company.getId(),
+                            company.getName(),
+                            company.getPiva(),
+                            company.getCode(),
+                            company.getDescription(),
+                            zoneCompany != null ? zoneCompany.getZone().getName() : null,
+                            companyAddress != null ? companyAddress.getAddress().getAddress() : null,
+                            company.getTelephone(),
+                            company.getPiva(),
+                            addressMapper.toResponse(companyAddress != null ? companyAddress.getAddress() : null),
+                            agentMapper.toResponseLight(agentZone != null ? agentZone.getAgent() : null),
+                            company.getType() != null ? company.getType().getId() : null,
+                    		company.getType() != null ? company.getType().getName() : null		
+                    )
+            );
+
+        }
+        return responses;
 	}
 }

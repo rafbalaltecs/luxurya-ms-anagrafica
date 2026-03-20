@@ -1,5 +1,7 @@
 package anagrafica.dto.agent;
 
+import java.util.List;
+
 import anagrafica.dto.user.UserResponse;
 import anagrafica.dto.zone.ZoneResponse;
 import lombok.AllArgsConstructor;
@@ -15,4 +17,5 @@ public class AgentResponse {
     private ZoneResponse zona;
     private UserResponse user;
     private Integer totalClients;
+    private List<ZoneResponse> zone;
 }

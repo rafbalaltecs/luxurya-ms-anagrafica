@@ -178,6 +178,8 @@ public class PlacerServiceImpl implements PlacerService {
                                 null,
                                 null,
                                 null,
+                                null,
+                                null,
                                 null
                         );
                         companyResponses.add(companyResponse);

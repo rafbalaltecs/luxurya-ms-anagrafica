@@ -3,6 +3,7 @@ package anagrafica.service.agent;
 import java.util.List;
 
 import anagrafica.dto.agent.AgentConfigurationVoyageResponse;
+import anagrafica.dto.agent.AgentCurrentVoyageExternalResponse;
 import anagrafica.dto.agent.AgentCurrentVoyageResponse;
 import anagrafica.dto.agent.AgentProductResponse;
 import anagrafica.dto.agent.AgentRequest;
@@ -31,6 +32,8 @@ public interface AgentService {
     List<VoyageOperationResponse> findAllOperationVoyageFromAgentId(final Long agentId, final Integer offet, final Integer limit);
     
     AgentCurrentVoyageResponse currentVoyage(final Long idAgent);
+    
+    AgentCurrentVoyageExternalResponse currentVoyageExternal(final Long idAgent);
     
     VoyageCustomerStatusAgentResponse currentVoyageCustomer(final Long idAgent, final Long zoneId);
     

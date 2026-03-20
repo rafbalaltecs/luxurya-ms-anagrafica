@@ -2,6 +2,7 @@ package anagrafica.controller;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import anagrafica.dto.agent.AgentResponse;
@@ -33,8 +35,14 @@ public class ZoneController {
     }
 
     @GetMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<List<ZoneResponse>> findAll(@Param("offset") Integer offset, @Param("limit") Integer limit){
-        return ResponseEntity.ok(zoneService.findAll());
+    public ResponseEntity<List<ZoneResponse>> findAll(
+    		@Param("offset") Integer offset, 
+    		@Param("limit") Integer limit,
+    		@RequestParam(name = "name", required = false) String name){
+    	if(StringUtils.isNotEmpty(name)) {
+    		return ResponseEntity.ok(zoneService.search(offset, limit, name));
+    	}
+        return ResponseEntity.ok(zoneService.findAll(offset, limit));
     }
 
     @GetMapping(value = "/{id}/companies", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -50,6 +58,11 @@ public class ZoneController {
     @PostMapping(value = "", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<ZoneResponse> save(@RequestBody final ZoneRequest request){
         return ResponseEntity.ok(zoneService.create(request));
+    }
+    
+    @PostMapping(value = "/populate", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void populate(){
+        zoneService.populateCoordinate();
     }
 
     @PutMapping(value = "/{id}", produces = org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE)

@@ -16,4 +16,7 @@ public interface ConfigurationVoyageZoneRepository extends JpaRepository<Configu
 	
 	@Query("SELECT v FROM ConfigurationVoyageZone v WHERE v.voyage.id = :idVoyage AND v.zone.id = :idZone AND v.isDeleted = false")
 	public List<ConfigurationVoyageZone> findAllConfigurationVoyageZoneConfVoyageIdAndZoneId(@Param("idVoyage") Long idVoyage, @Param("idZone") Long idZone);
+	
+	@Query("SELECT v FROM ConfigurationVoyageZone v WHERE v.zone.id = :idZone AND v.isDeleted = false")
+	public List<ConfigurationVoyageZone> findAllConfigurationVoyageZoneConfZoneId(@Param("idZone") Long idZone);
 }
